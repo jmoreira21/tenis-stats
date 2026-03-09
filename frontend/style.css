@@ -41,5 +41,35 @@ button:hover {
     margin-top: 20px;
     padding-top: 15px;
     border-top: 1px solid #eee;
-    display: none; /* Fica escondido até fazer a busca */
+    display: none; 
+}
+
+.search-box {
+    position: relative; 
+}
+
+.sugestoes {
+    position: absolute;
+    top: 100%;
+    left: 20%; 
+    width: 60%;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    display: none; 
+    text-align: left;
+    z-index: 10;
+}
+
+.item-sugestao {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.item-sugestao:hover {
+    background-color: #f0f0f0;
 }
