@@ -62,42 +62,50 @@ def buscar_jogador(nome_pesquisado):
         dados = jogador_encontrado.iloc[0]
         id_jogador = dados['player_id']
         
-        vitorias, derrotas, aproveitamento = 0, 0, 0
-        superficie_favorita = "Sem dados"
-        titulos = {"G": 0, "F": 0, "M": 0, "A": 0, "C": 0}
+        # Variáveis acumuladoras para a carreira toda
+        vitorias, derrotas = 0, 0
+        titulos = {"G": 0, "F": 0, "M": 0, "A": 0}
+        superficies_vitorias = []
         
-        if anos_disponiveis:
-            ano_recente = anos_disponiveis[0]
-            caminho_matches = os.path.join(pasta_dados, f'atp_matches_{ano_recente}.csv')
+        for ano in anos_disponiveis:
+            caminho_matches = os.path.join(pasta_dados, f'atp_matches_{ano}.csv')
             
             if os.path.exists(caminho_matches):
-                df_matches = pd.read_csv(caminho_matches)
+                # low_memory=False ajuda o Pandas a ler arquivos grandes mais rápido
+                df_matches = pd.read_csv(caminho_matches, low_memory=False)
                 
-                # Separa as vitórias e derrotas
-                df_vitorias = df_matches[df_matches['winner_id'] == id_jogador]
-                df_derrotas = df_matches[df_matches['loser_id'] == id_jogador]
+                # Filtra os jogos do ano
+                vit_ano = df_matches[df_matches['winner_id'] == id_jogador]
+                der_ano = df_matches[df_matches['loser_id'] == id_jogador]
                 
-                vitorias = len(df_vitorias)
-                derrotas = len(df_derrotas)
+                vitorias += len(vit_ano)
+                derrotas += len(der_ano)
                 
-                # Calcula o Aproveitamento
-                total_jogos = vitorias + derrotas
-                if total_jogos > 0:
-                    aproveitamento = round((vitorias / total_jogos) * 100, 1)
+                # Guarda as superfícies onde ele ganhou para descobrirmos a favorita depois
+                if not vit_ano.empty:
+                    superficies_vitorias.extend(vit_ano['surface'].dropna().tolist())
                 
-                # Descobre a Superfície Favorita (onde mais ganhou jogos)
-                if not df_vitorias.empty:
-                    sup_ing = df_vitorias['surface'].value_counts().idxmax()
-                    traducao = {'Clay': 'Saibro', 'Grass': 'Grama', 'Hard': 'Dura', 'Carpet': 'Carpete'}
-                    superficie_favorita = traducao.get(sup_ing, sup_ing)
-                
-                # Estante de Troféus (Filtra vitórias onde a rodada era 'F' de Final)
-                finais_ganhas = df_vitorias[df_vitorias['round'] == 'F']
+                # Conta os títulos do ano
+                finais_ganhas = vit_ano[vit_ano['round'] == 'F']
                 if not finais_ganhas.empty:
-                    # Conta quantos títulos ele tem por nível de torneio
-                    contagem_titulos = finais_ganhas['tourney_level'].value_counts()
+                    contagem = finais_ganhas['tourney_level'].value_counts()
                     for nivel in titulos.keys():
-                        titulos[nivel] = int(contagem_titulos.get(nivel, 0))
+                        titulos[nivel] += int(contagem.get(nivel, 0))
+
+       
+        total_jogos = vitorias + derrotas
+        aproveitamento = 0
+        if total_jogos > 0:
+            aproveitamento = round((vitorias / total_jogos) * 100, 1)
+
+       
+        superficie_favorita = "Sem dados"
+        if superficies_vitorias:
+            from collections import Counter
+            
+            sup_ing = Counter(superficies_vitorias).most_common(1)[0][0]
+            traducao = {'Clay': 'Saibro', 'Grass': 'Grama', 'Hard': 'Quadra Dura', 'Carpet': 'Carpete'}
+            superficie_favorita = traducao.get(sup_ing, sup_ing)
 
         mao = "Destro" if dados['hand'] == "R" else "Canhoto" if dados['hand'] == "L" else "Outro"
 

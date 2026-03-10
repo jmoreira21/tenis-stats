@@ -98,7 +98,6 @@ document.getElementById('btn-buscar-jogador').addEventListener('click', () => {
             document.getElementById('t-f').textContent = dados.titulos.F;
             document.getElementById('t-m').textContent = dados.titulos.M;
             document.getElementById('t-a').textContent = dados.titulos.A;
-            document.getElementById('t-c').textContent = dados.titulos.C;
             
             document.getElementById('area-resultado-jogador').style.display = 'block';
         })
