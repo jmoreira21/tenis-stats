@@ -8,20 +8,72 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎾 Busca de Tenistas</h1>
+        <h1>🎾 ATP Stats</h1>
         
-        <div class="search-box">
-            <input type="text" id="input-jogador" placeholder="Ex: Federer, Nadal...">
-            <button id="btn-buscar">Pesquisar</button>
-            <div id="lista-sugestoes" class="sugestoes"></div>
+        <div class="abas">
+            <button id="aba-jogador" class="aba ativa">Buscar Jogador</button>
+            <button id="aba-torneio" class="aba">Buscar Torneio</button>
+            <button id="aba-campanha" class="aba">Campanha</button>
         </div>
 
-        <div id="area-resultado" class="resultado-oculto">
-            <h2 id="nome-jogador">--</h2>
-            <p><strong>País:</strong> <span id="pais-jogador">--</span></p>
-            <p><strong>Mão Dominante:</strong> <span id="mao-jogador">--</span></p>
-            <p><strong>Vitórias:</strong> <span id="vitorias-jogador">--</span></p>
-            <p><strong>Derrotas:</strong> <span id="derrotas-jogador">--</span></p>
+        <div id="secao-jogador" class="secao">
+            <div class="search-box">
+                <input type="text" id="input-jogador" placeholder="Ex: Federer, Nadal...">
+                <button id="btn-buscar-jogador">Pesquisar</button>
+                <div id="lista-sugestoes" class="sugestoes"></div>
+            </div>
+
+            <div id="area-resultado-jogador" class="resultado-oculto">
+                <h2 id="nome-jogador">--</h2>
+                <p><strong>País:</strong> <span id="pais-jogador">--</span></p>
+                <p><strong>Mão Dominante:</strong> <span id="mao-jogador">--</span></p>
+                <p><strong>Vitórias no Ano:</strong> <span id="vitorias-jogador">--</span></p>
+                <p><strong>Derrotas no Ano:</strong> <span id="derrotas-jogador">--</span></p>
+            </div>
+        </div>
+
+        <div id="secao-torneio" class="secao oculta">
+            <div class="search-box">
+                <input type="text" id="input-torneio" placeholder="Ex: Wimbledon, Roland Garros...">
+                <select id="select-ano">
+                    <option value="">Carregando anos...</option>
+                </select>
+                <button id="btn-buscar-torneio">Pesquisar</button>
+                <div id="lista-sugestoes-torneio" class="sugestoes"></div>
+            </div>
+
+            <div id="area-resultado-torneio" class="resultado-oculto">
+                <h2 id="nome-oficial-torneio">--</h2>
+                <h3 style="color: #d89f00;">🏆 Campeão: <span id="campeao-torneio">--</span></h3>
+                <p><strong>🥈 Vice:</strong> <span id="vice-torneio">--</span></p>
+                <p><strong>🎾 Placar:</strong> <span id="placar-torneio">--</span></p>
+            </div>
+        </div>
+
+        <div id="secao-campanha" class="secao oculta">
+            <div class="search-box">
+                <input type="text" id="input-campanha-jogador" placeholder="Nome do Jogador...">
+                <div id="lista-sugestoes-campanha-jogador" class="sugestoes"></div>
+                
+                <input type="text" id="input-campanha-torneio" placeholder="Nome do Torneio...">
+                <div id="lista-sugestoes-campanha-torneio" class="sugestoes"></div>
+                
+                <select id="select-ano-campanha">
+                    <option value="">Carregando anos...</option>
+                </select>
+                
+                <button id="btn-buscar-campanha">Ver Campanha</button>
+            </div>
+
+            <div id="area-resultado-campanha" class="resultado-oculto">
+                <h2 id="titulo-campanha">--</h2>
+                
+                <div id="banner-campeao" class="banner-campeao">
+                    🏆 CAMPEÃO DO TORNEIO! 🏆
+                </div>
+
+                <div id="lista-partidas"></div>
+            </div>
         </div>
     </div>
 

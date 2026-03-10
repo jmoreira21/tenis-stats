@@ -73,3 +73,90 @@ button:hover {
 .item-sugestao:hover {
     background-color: #f0f0f0;
 }
+
+/* Estilo das Abas */
+.abas {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eee;
+}
+
+.aba {
+    background: none;
+    color: #666;
+    padding: 10px 20px;
+    border-radius: 0;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.aba:hover {
+    background: #f9f9f9;
+}
+
+.aba.ativa {
+    color: #28a745;
+    border-bottom: 3px solid #28a745;
+}
+
+.oculta {
+    display: none;
+}
+
+select {
+    padding: 10px;
+    margin: 5px 0;
+    width: 60%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+/* Estilos da Campanha */
+.banner-campeao {
+    background-color: #ffd700; /* Dourado */
+    color: #8b6508;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    display: none; /* Escondido até o Python avisar que é campeão */
+    animation: piscar 1.5s infinite alternate;
+}
+
+@keyframes piscar {
+    from { box-shadow: 0 0 10px #ffd700; }
+    to { box-shadow: 0 0 20px #ffaa00; }
+}
+
+.partida {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f9f9f9;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    border-left: 6px solid #ccc;
+    text-align: left;
+}
+
+.partida.vitoria {
+    border-left-color: #28a745; 
+}
+
+.partida.derrota {
+    border-left-color: #dc3545; 
+    opacity: 0.8;
+}
+
+.info-partida {
+    display: flex;
+    flex-direction: column;
+}
+
+.rodada { font-size: 12px; color: #666; font-weight: bold;}
+.oponente { font-size: 16px; font-weight: bold; margin-top: 2px;}
+.placar-partida { font-size: 15px; color: #333; font-family: monospace; font-weight: bold;}
