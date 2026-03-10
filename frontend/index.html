@@ -25,10 +25,34 @@
 
             <div id="area-resultado-jogador" class="resultado-oculto">
                 <h2 id="nome-jogador">--</h2>
-                <p><strong>País:</strong> <span id="pais-jogador">--</span></p>
-                <p><strong>Mão Dominante:</strong> <span id="mao-jogador">--</span></p>
-                <p><strong>Vitórias no Ano:</strong> <span id="vitorias-jogador">--</span></p>
-                <p><strong>Derrotas no Ano:</strong> <span id="derrotas-jogador">--</span></p>
+                <p><strong>País:</strong> <span id="pais-jogador">--</span> | <strong>Mão:</strong> <span id="mao-jogador">--</span></p>
+                <hr>
+                
+                <div class="stats-grid">
+                    <div>
+                        <p class="stat-label">Desempenho (Ano base)</p>
+                        <p class="stat-value"><span id="vitorias-jogador" style="color: #28a745;">0</span>V - <span id="derrotas-jogador" style="color: #dc3545;">0</span>D</p>
+                    </div>
+                    <div>
+                        <p class="stat-label">Aproveitamento</p>
+                        <p class="stat-value"><span id="aproveitamento-jogador">0</span>%</p>
+                    </div>
+                    <div>
+                        <p class="stat-label">Piso Favorito</p>
+                        <p class="stat-value" id="piso-jogador">--</p>
+                    </div>
+                </div>
+
+                <div class="estante-trofeus">
+                    <h3>🏆 Títulos Conquistados</h3>
+                    <div class="trofeus-grid">
+                        <div class="trofeu-item"><strong>Grand Slam:</strong> <span id="t-g">0</span></div>
+                        <div class="trofeu-item"><strong>ATP Finals:</strong> <span id="t-f">0</span></div>
+                        <div class="trofeu-item"><strong>Masters 1000:</strong> <span id="t-m">0</span></div>
+                        <div class="trofeu-item"><strong>ATP 500/250:</strong> <span id="t-a">0</span></div>
+                        <div class="trofeu-item"><strong>Challengers:</strong> <span id="t-c">0</span></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -67,11 +91,9 @@
 
             <div id="area-resultado-campanha" class="resultado-oculto">
                 <h2 id="titulo-campanha">--</h2>
-                
                 <div id="banner-campeao" class="banner-campeao">
                     🏆 CAMPEÃO DO TORNEIO! 🏆
                 </div>
-
                 <div id="lista-partidas"></div>
             </div>
         </div>

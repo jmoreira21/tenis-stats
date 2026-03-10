@@ -88,8 +88,18 @@ document.getElementById('btn-buscar-jogador').addEventListener('click', () => {
             document.getElementById('nome-jogador').textContent = dados.nome;
             document.getElementById('pais-jogador').textContent = dados.pais;
             document.getElementById('mao-jogador').textContent = dados.mao_dominante;
+            
             document.getElementById('vitorias-jogador').textContent = dados.vitorias;
             document.getElementById('derrotas-jogador').textContent = dados.derrotas;
+            document.getElementById('aproveitamento-jogador').textContent = dados.aproveitamento;
+            document.getElementById('piso-jogador').textContent = dados.piso_favorito;
+            
+            document.getElementById('t-g').textContent = dados.titulos.G;
+            document.getElementById('t-f').textContent = dados.titulos.F;
+            document.getElementById('t-m').textContent = dados.titulos.M;
+            document.getElementById('t-a').textContent = dados.titulos.A;
+            document.getElementById('t-c').textContent = dados.titulos.C;
+            
             document.getElementById('area-resultado-jogador').style.display = 'block';
         })
         .catch(() => alert('Jogador não encontrado!'));

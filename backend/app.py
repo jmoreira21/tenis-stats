@@ -62,16 +62,42 @@ def buscar_jogador(nome_pesquisado):
         dados = jogador_encontrado.iloc[0]
         id_jogador = dados['player_id']
         
-        vitorias, derrotas = 0, 0
+        vitorias, derrotas, aproveitamento = 0, 0, 0
+        superficie_favorita = "Sem dados"
+        titulos = {"G": 0, "F": 0, "M": 0, "A": 0, "C": 0}
         
-        # Usa o ano mais recente disponível na pasta para as estatísticas
         if anos_disponiveis:
             ano_recente = anos_disponiveis[0]
             caminho_matches = os.path.join(pasta_dados, f'atp_matches_{ano_recente}.csv')
+            
             if os.path.exists(caminho_matches):
                 df_matches = pd.read_csv(caminho_matches)
-                vitorias = len(df_matches[df_matches['winner_id'] == id_jogador])
-                derrotas = len(df_matches[df_matches['loser_id'] == id_jogador])
+                
+                # Separa as vitórias e derrotas
+                df_vitorias = df_matches[df_matches['winner_id'] == id_jogador]
+                df_derrotas = df_matches[df_matches['loser_id'] == id_jogador]
+                
+                vitorias = len(df_vitorias)
+                derrotas = len(df_derrotas)
+                
+                # Calcula o Aproveitamento
+                total_jogos = vitorias + derrotas
+                if total_jogos > 0:
+                    aproveitamento = round((vitorias / total_jogos) * 100, 1)
+                
+                # Descobre a Superfície Favorita (onde mais ganhou jogos)
+                if not df_vitorias.empty:
+                    sup_ing = df_vitorias['surface'].value_counts().idxmax()
+                    traducao = {'Clay': 'Saibro', 'Grass': 'Grama', 'Hard': 'Dura', 'Carpet': 'Carpete'}
+                    superficie_favorita = traducao.get(sup_ing, sup_ing)
+                
+                # Estante de Troféus (Filtra vitórias onde a rodada era 'F' de Final)
+                finais_ganhas = df_vitorias[df_vitorias['round'] == 'F']
+                if not finais_ganhas.empty:
+                    # Conta quantos títulos ele tem por nível de torneio
+                    contagem_titulos = finais_ganhas['tourney_level'].value_counts()
+                    for nivel in titulos.keys():
+                        titulos[nivel] = int(contagem_titulos.get(nivel, 0))
 
         mao = "Destro" if dados['hand'] == "R" else "Canhoto" if dados['hand'] == "L" else "Outro"
 
@@ -79,8 +105,11 @@ def buscar_jogador(nome_pesquisado):
             "nome": dados['nome_completo'],
             "pais": dados['ioc'],
             "mao_dominante": mao,
-            "vitorias": int(vitorias),
-            "derrotas": int(derrotas)
+            "vitorias": vitorias,
+            "derrotas": derrotas,
+            "aproveitamento": aproveitamento,
+            "piso_favorito": superficie_favorita,
+            "titulos": titulos
         })
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
