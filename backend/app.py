@@ -1,219 +1,163 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-import pandas as pd
+import sqlite3
 import os
 
 app = Flask(__name__)
 CORS(app)
 
-# --- INICIALIZAÇÃO E CARREGAMENTO NA MEMÓRIA ---
+
 diretorio_atual = os.path.dirname(os.path.abspath(__file__))
-pasta_dados = os.path.join(diretorio_atual, '..', 'dados')
+caminho_db = os.path.join(diretorio_atual, '..', 'dados', 'tennis.db')
 
-caminho_players = os.path.join(pasta_dados, 'atp_players.csv')
-df_players = pd.read_csv(caminho_players)
-df_players['nome_completo'] = df_players['name_first'] + ' ' + df_players['name_last']
+def conectar_banco():
+    conn = sqlite3.connect(caminho_db)
+    conn.row_factory = sqlite3.Row 
+    return conn
 
-# Descobrindo os anos disponíveis e torneios únicos automaticamente
-anos_disponiveis = []
-torneios_unicos = set()
 
-for arquivo in os.listdir(pasta_dados):
-    if arquivo.startswith('atp_matches_') and arquivo.endswith('.csv'):
-        # Extrai o ano do nome do arquivo (ex: de "atp_matches_2023.csv" tira "2023")
-        ano = arquivo.replace('atp_matches_', '').replace('.csv', '')
-        anos_disponiveis.append(ano)
-        
-        # Lê o arquivo do ano para pegar os nomes dos torneios
-        df_temp = pd.read_csv(os.path.join(pasta_dados, arquivo))
-        torneios_unicos.update(df_temp['tourney_name'].dropna().unique())
-
-# Organiza os anos do mais recente pro mais antigo
-anos_disponiveis.sort(reverse=True)
-lista_torneios_unicos = list(torneios_unicos)
-
-# --- ROTAS DE AUXÍLIO (AUTOCOMPLETE E ANOS) ---
 @app.route('/api/anos', methods=['GET'])
 def obter_anos():
-    return jsonify(anos_disponiveis)
+    conn = conectar_banco()
+    # Pega os anos únicos extraindo os 4 primeiros dígitos da data do torneio
+    anos = conn.execute("SELECT DISTINCT SUBSTR(CAST(tourney_date AS TEXT), 1, 4) AS ano FROM partidas ORDER BY ano DESC").fetchall()
+    conn.close()
+    return jsonify([linha['ano'] for linha in anos if linha['ano']])
 
 @app.route('/api/sugestoes/<texto>', methods=['GET'])
 def sugerir_jogadores(texto):
-    sugestoes = df_players[df_players['nome_completo'].str.contains(texto, case=False, na=False)]
-    return jsonify(sugestoes['nome_completo'].head(10).tolist())
+    conn = conectar_banco()
+    sugestoes = conn.execute("SELECT nome_completo FROM jogadores WHERE nome_completo LIKE ? LIMIT 10", (f'%{texto}%',)).fetchall()
+    conn.close()
+    return jsonify([linha['nome_completo'] for linha in sugestoes])
 
 @app.route('/api/sugestoes_torneio/<texto>', methods=['GET'])
 def sugerir_torneios(texto):
-    # Filtra a lista de torneios únicos
-    sugestoes = [t for t in lista_torneios_unicos if texto.lower() in t.lower()]
-    return jsonify(sugestoes[:10])
+    conn = conectar_banco()
+    sugestoes = conn.execute("SELECT DISTINCT tourney_name FROM partidas WHERE tourney_name LIKE ? LIMIT 10", (f'%{texto}%',)).fetchall()
+    conn.close()
+    return jsonify([linha['tourney_name'] for linha in sugestoes])
 
-# --- ROTAS PRINCIPAIS (BUSCA) ---
 @app.route('/api/jogador/<nome_pesquisado>', methods=['GET'])
 def buscar_jogador(nome_pesquisado):
-    try:
-        jogador_encontrado = df_players[df_players['nome_completo'].str.lower() == nome_pesquisado.lower()]
-        if jogador_encontrado.empty:
-            jogador_encontrado = df_players[df_players['nome_completo'].str.contains(nome_pesquisado, case=False, na=False)]
+    conn = conectar_banco()
+    
+    jogador = conn.execute("SELECT * FROM jogadores WHERE nome_completo LIKE ? LIMIT 1", (nome_pesquisado,)).fetchone()
+    if not jogador:
+        jogador = conn.execute("SELECT * FROM jogadores WHERE nome_completo LIKE ? LIMIT 1", (f'%{nome_pesquisado}%',)).fetchone()
         
-        if jogador_encontrado.empty:
-            return jsonify({"erro": "Jogador não encontrado"}), 404
-            
-        dados = jogador_encontrado.iloc[0]
-        id_jogador = dados['player_id']
+    if not jogador:
+        conn.close()
+        return jsonify({"erro": "Jogador não encontrado"}), 404
+
+    id_jogador = jogador['player_id']
+    
+    vitorias = conn.execute("SELECT COUNT(*) FROM partidas WHERE winner_id = ?", (id_jogador,)).fetchone()[0]
+    derrotas = conn.execute("SELECT COUNT(*) FROM partidas WHERE loser_id = ?", (id_jogador,)).fetchone()[0]
+    
+    total_jogos = vitorias + derrotas
+    aproveitamento = round((vitorias / total_jogos) * 100, 1) if total_jogos > 0 else 0
+    
+    sup_query = conn.execute("SELECT surface, COUNT(*) as qtd FROM partidas WHERE winner_id = ? AND surface IS NOT NULL GROUP BY surface ORDER BY qtd DESC LIMIT 1", (id_jogador,)).fetchone()
+    
+    superficie_favorita = "Sem dados"
+    if sup_query:
+        sup_ing = sup_query['surface']
+        traducao = {'Clay': 'Saibro', 'Grass': 'Grama', 'Hard': 'Quadra Dura', 'Carpet': 'Carpete'}
+        superficie_favorita = traducao.get(sup_ing, sup_ing)
         
-        # Variáveis acumuladoras para a carreira toda
-        vitorias, derrotas = 0, 0
-        titulos = {"G": 0, "F": 0, "M": 0, "A": 0}
-        superficies_vitorias = []
-        
-        for ano in anos_disponiveis:
-            caminho_matches = os.path.join(pasta_dados, f'atp_matches_{ano}.csv')
+    titulos_query = conn.execute("SELECT tourney_level, COUNT(*) as qtd FROM partidas WHERE winner_id = ? AND round = 'F' GROUP BY tourney_level", (id_jogador,)).fetchall()
+    titulos = {"G": 0, "F": 0, "M": 0, "A": 0}
+    for linha in titulos_query:
+        nivel = linha['tourney_level']
+        if nivel in titulos:
+            titulos[nivel] = linha['qtd']
             
-            if os.path.exists(caminho_matches):
-                # low_memory=False ajuda o Pandas a ler arquivos grandes mais rápido
-                df_matches = pd.read_csv(caminho_matches, low_memory=False)
-                
-                # Filtra os jogos do ano
-                vit_ano = df_matches[df_matches['winner_id'] == id_jogador]
-                der_ano = df_matches[df_matches['loser_id'] == id_jogador]
-                
-                vitorias += len(vit_ano)
-                derrotas += len(der_ano)
-                
-                # Guarda as superfícies onde ele ganhou para descobrirmos a favorita depois
-                if not vit_ano.empty:
-                    superficies_vitorias.extend(vit_ano['surface'].dropna().tolist())
-                
-                # Conta os títulos do ano
-                finais_ganhas = vit_ano[vit_ano['round'] == 'F']
-                if not finais_ganhas.empty:
-                    contagem = finais_ganhas['tourney_level'].value_counts()
-                    for nivel in titulos.keys():
-                        titulos[nivel] += int(contagem.get(nivel, 0))
+    conn.close()
 
-       
-        total_jogos = vitorias + derrotas
-        aproveitamento = 0
-        if total_jogos > 0:
-            aproveitamento = round((vitorias / total_jogos) * 100, 1)
+    mao = "Destro" if jogador['hand'] == "R" else "Canhoto" if jogador['hand'] == "L" else "Outro"
 
-       
-        superficie_favorita = "Sem dados"
-        if superficies_vitorias:
-            from collections import Counter
-            
-            sup_ing = Counter(superficies_vitorias).most_common(1)[0][0]
-            traducao = {'Clay': 'Saibro', 'Grass': 'Grama', 'Hard': 'Quadra Dura', 'Carpet': 'Carpete'}
-            superficie_favorita = traducao.get(sup_ing, sup_ing)
-
-        mao = "Destro" if dados['hand'] == "R" else "Canhoto" if dados['hand'] == "L" else "Outro"
-
-        return jsonify({
-            "nome": dados['nome_completo'],
-            "pais": dados['ioc'],
-            "mao_dominante": mao,
-            "vitorias": vitorias,
-            "derrotas": derrotas,
-            "aproveitamento": aproveitamento,
-            "piso_favorito": superficie_favorita,
-            "titulos": titulos
-        })
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+    return jsonify({
+        "nome": jogador['nome_completo'],
+        "pais": jogador['ioc'],
+        "mao_dominante": mao,
+        "vitorias": vitorias,
+        "derrotas": derrotas,
+        "aproveitamento": aproveitamento,
+        "piso_favorito": superficie_favorita,
+        "titulos": titulos
+    })
 
 @app.route('/api/torneio/<nome_torneio>/<ano>', methods=['GET'])
 def buscar_campeao(nome_torneio, ano):
-    caminho_arquivo_ano = os.path.join(pasta_dados, f'atp_matches_{ano}.csv')
+    conn = conectar_banco()
+    final = conn.execute('''
+        SELECT tourney_name, winner_name, loser_name, score 
+        FROM partidas 
+        WHERE tourney_name LIKE ? AND SUBSTR(CAST(tourney_date AS TEXT), 1, 4) = ? AND round = 'F' 
+        LIMIT 1
+    ''', (f'%{nome_torneio}%', ano)).fetchone()
     
-    if not os.path.exists(caminho_arquivo_ano):
-        return jsonify({"erro": f"Banco de dados de {ano} não encontrado."}), 404
-        
-    try:
-        df_matches = pd.read_csv(caminho_arquivo_ano)
-        torneios_encontrados = df_matches[df_matches['tourney_name'].str.contains(nome_torneio, case=False, na=False)]
-        
-        if torneios_encontrados.empty:
-            return jsonify({"erro": "Torneio não encontrado nesse ano."}), 404
-            
-        final = torneios_encontrados[torneios_encontrados['round'] == 'F']
-        if final.empty:
-            return jsonify({"erro": "Final não encontrada."}), 404
-            
-        dados_final = final.iloc[0]
-        return jsonify({
-            "torneio_oficial": dados_final['tourney_name'],
-            "ano": ano,
-            "campeao": dados_final['winner_name'],
-            "vice": dados_final['loser_name'],
-            "placar": dados_final['score']
-        })
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+    conn.close()
     
-  
+    if not final:
+        return jsonify({"erro": "Final não encontrada."}), 404
+        
+    return jsonify({
+        "torneio_oficial": final['tourney_name'],
+        "ano": ano,
+        "campeao": final['winner_name'],
+        "vice": final['loser_name'],
+        "placar": final['score']
+    })
+
 @app.route('/api/campanha/<jogador>/<torneio>/<ano>', methods=['GET'])
 def buscar_campanha(jogador, torneio, ano):
-    caminho_arquivo_ano = os.path.join(pasta_dados, f'atp_matches_{ano}.csv')
+    conn = conectar_banco()
     
-    if not os.path.exists(caminho_arquivo_ano):
-        return jsonify({"erro": f"Banco de dados de {ano} não encontrado."}), 404
-
-    try:
-        jogador_encontrado = df_players[df_players['nome_completo'].str.lower() == jogador.lower()]
-        if jogador_encontrado.empty:
-            jogador_encontrado = df_players[df_players['nome_completo'].str.contains(jogador, case=False, na=False)]
+    jog = conn.execute("SELECT player_id, nome_completo FROM jogadores WHERE nome_completo LIKE ? LIMIT 1", (f'%{jogador}%',)).fetchone()
+    if not jog:
+        conn.close()
+        return jsonify({"erro": "Jogador não encontrado"}), 404
         
-        if jogador_encontrado.empty: return jsonify({"erro": "Jogador não encontrado"}), 404
+    id_jogador = jog['player_id']
+    
+    partidas_query = conn.execute('''
+        SELECT round, winner_id, winner_name, loser_name, score, tourney_name 
+        FROM partidas 
+        WHERE tourney_name LIKE ? AND SUBSTR(CAST(tourney_date AS TEXT), 1, 4) = ? AND (winner_id = ? OR loser_id = ?) 
+        ORDER BY match_num
+    ''', (f'%{torneio}%', ano, id_jogador, id_jogador)).fetchall()
+    
+    conn.close()
+    
+    if not partidas_query:
+        return jsonify({"erro": "Campanha não encontrada."}), 404
         
-        id_jogador = jogador_encontrado.iloc[0]['player_id']
-        nome_oficial_jogador = jogador_encontrado.iloc[0]['nome_completo']
+    partidas = []
+    campeao = False
+    rodada_map = {'F': 'Final', 'SF': 'Semifinal', 'QF': 'Quartas', 'R16': 'Oitavas', 'R32': '3ª Rodada', 'R64': '2ª Rodada', 'R128': '1ª Rodada', 'RR': 'Grupos'}
 
-        #Carrega as partidas do ano e acha o torneio
-        df_matches = pd.read_csv(caminho_arquivo_ano)
-        df_torneio = df_matches[df_matches['tourney_name'].str.contains(torneio, case=False, na=False)]
+    for p in partidas_query:
+        ganhou = p['winner_id'] == id_jogador
+        oponente = p['loser_name'] if ganhou else p['winner_name']
         
-        if df_torneio.empty: return jsonify({"erro": "Torneio não encontrado nesse ano."}), 404
-        nome_oficial_torneio = df_torneio.iloc[0]['tourney_name']
-
-        #Pega todas as partidas onde o jogador foi o vencedor OU o perdedor
-        df_campanha = df_torneio[(df_torneio['winner_id'] == id_jogador) | (df_torneio['loser_id'] == id_jogador)]
-        
-        if df_campanha.empty: return jsonify({"erro": f"{nome_oficial_jogador} não participou deste torneio."}), 404
-
-        df_campanha = df_campanha.sort_values('match_num')
-
-        partidas = []
-        campeao = False
-
-        rodada_map = {'F': 'Final', 'SF': 'Semifinal', 'QF': 'Quartas', 'R16': 'Oitavas', 'R32': '3ª Rodada', 'R64': '2ª Rodada', 'R128': '1ª Rodada', 'RR': 'Grupos'}
-
-        # Varre cada partida que ele jogou
-        for _, partida in df_campanha.iterrows():
-            ganhou = partida['winner_id'] == id_jogador
-            oponente = partida['loser_name'] if ganhou else partida['winner_name']
-            rodada_bonita = rodada_map.get(partida['round'], partida['round'])
-
-            partidas.append({
-                "rodada": rodada_bonita,
-                "oponente": oponente,
-                "placar": partida['score'],
-                "resultado": "V" if ganhou else "D"
-            })
-
-            if ganhou and partida['round'] == 'F':
-                campeao = True
-
-        return jsonify({
-            "jogador": nome_oficial_jogador,
-            "torneio": nome_oficial_torneio,
-            "ano": ano,
-            "campeao": campeao,
-            "partidas": partidas
+        partidas.append({
+            "rodada": rodada_map.get(p['round'], p['round']),
+            "oponente": oponente,
+            "placar": p['score'],
+            "resultado": "V" if ganhou else "D"
         })
+        if ganhou and p['round'] == 'F':
+            campeao = True
 
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+    return jsonify({
+        "jogador": jog['nome_completo'],
+        "torneio": partidas_query[0]['tourney_name'],
+        "ano": ano,
+        "campeao": campeao,
+        "partidas": partidas
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
