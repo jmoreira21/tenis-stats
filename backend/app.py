@@ -67,7 +67,7 @@ def buscar_jogador(nome_pesquisado):
         superficie_favorita = traducao.get(sup_ing, sup_ing)
         
     titulos_query = conn.execute("SELECT tourney_level, COUNT(*) as qtd FROM partidas WHERE winner_id = ? AND round = 'F' GROUP BY tourney_level", (id_jogador,)).fetchall()
-    titulos = {"G": 0, "F": 0, "M": 0, "A": 0}
+    titulos = {"G": 0, "F": 0, "M": 0, "A": 0, "C": 0}
     for linha in titulos_query:
         nivel = linha['tourney_level']
         if nivel in titulos:
