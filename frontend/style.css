@@ -1,206 +1,275 @@
+/* =======================================================
+   1. ESTILOS GERAIS E TIPOGRAFIA
+======================================================== */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 20px;
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
 }
 
 .container {
-    background: white;
+    background: #ffffff;
     padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 650px;
+}
+
+h1 {
     text-align: center;
-    width: 350px;
+    color: #2c3e50;
+    margin-top: 0;
 }
 
-input {
-    padding: 10px;
-    width: 60%;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+hr {
+    border: 0;
+    height: 1px;
+    background: #eee;
+    margin: 20px 0;
 }
 
-button {
-    padding: 10px 15px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #218838;
-}
-
-#area-resultado {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
-    display: none; 
-}
-
-.search-box {
-    position: relative; 
-}
-
-.sugestoes {
-    position: absolute;
-    top: 100%;
-    left: 20%; 
-    width: 60%;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 0 0 5px 5px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    max-height: 200px;
-    overflow-y: auto;
-    display: none; 
-    text-align: left;
-    z-index: 10;
-}
-
-.item-sugestao {
-    padding: 10px;
-    cursor: pointer;
-    border-bottom: 1px solid #eee;
-}
-
-.item-sugestao:hover {
-    background-color: #f0f0f0;
-}
-
-/* Estilo das Abas */
+/* =======================================================
+   2. NAVEGAÇÃO (ABAS)
+======================================================== */
 .abas {
     display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
+    justify-content: space-between;
     border-bottom: 2px solid #eee;
+    margin-bottom: 25px;
 }
 
 .aba {
+    flex: 1;
     background: none;
-    color: #666;
-    padding: 10px 20px;
-    border-radius: 0;
+    border: none;
+    padding: 12px 0;
+    font-size: 15px;
     font-weight: bold;
-    font-size: 16px;
+    color: #7f8c8d;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .aba:hover {
-    background: #f9f9f9;
+    color: #2c3e50;
 }
 
 .aba.ativa {
-    color: #28a745;
-    border-bottom: 3px solid #28a745;
+    color: #27ae60;
+    border-bottom: 3px solid #27ae60;
 }
 
 .oculta {
-    display: none;
+    display: none !important;
 }
 
-select {
-    padding: 10px;
-    margin: 5px 0;
-    width: 60%;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
-}
-
-/* Estilos da Campanha */
-.banner-campeao {
-    background-color: #ffd700; /* Dourado */
-    color: #8b6508;
-    padding: 15px;
-    border-radius: 8px;
-    font-size: 18px;
-    font-weight: bold;
+/* =======================================================
+   3. CAIXAS DE BUSCA E AUTOCOMPLETE
+======================================================== */
+.search-box {
+    display: flex;
+    gap: 10px;
     margin-bottom: 20px;
-    display: none; /* Escondido até o Python avisar que é campeão */
-    animation: piscar 1.5s infinite alternate;
+    position: relative;
+    overflow: visible; /* Garante que a lista não seja cortada */
 }
 
-@keyframes piscar {
-    from { box-shadow: 0 0 10px #ffd700; }
-    to { box-shadow: 0 0 20px #ffaa00; }
-}
-
-.partida {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #f9f9f9;
+input, select {
+    flex: 1;
     padding: 12px;
-    margin-bottom: 8px;
-    border-radius: 5px;
-    border-left: 6px solid #ccc;
-    text-align: left;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+    outline: none;
 }
 
-.partida.vitoria {
-    border-left-color: #28a745; 
+input:focus, select:focus {
+    border-color: #27ae60;
 }
 
-.partida.derrota {
-    border-left-color: #dc3545; 
-    opacity: 0.8;
+button {
+    padding: 12px 20px;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
 }
 
-.info-partida {
-    display: flex;
-    flex-direction: column;
+button:hover {
+    background-color: #219150;
 }
 
-.rodada { font-size: 12px; color: #666; font-weight: bold;}
-.oponente { font-size: 16px; font-weight: bold; margin-top: 2px;}
-.placar-partida { font-size: 15px; color: #333; font-family: monospace; font-weight: bold;}
+/* A Mágica do Autocomplete */
+.sugestoes {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 9999; /* Joga a lista para frente de tudo */
+}
 
+/* =======================================================
+   4. TELA 1: ESTATÍSTICAS DO JOGADOR
+======================================================== */
 .stats-grid {
-    display: flex;
-    justify-content: space-around;
-    background: #f9f9f9;
-    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    text-align: center;
+    background: #f8f9fa;
+    padding: 20px;
     border-radius: 8px;
-    margin: 15px 0;
-    border: 1px solid #eee;
+    margin-bottom: 20px;
 }
 
 .stat-label {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 5px;
+    margin: 0;
+    font-size: 13px;
+    color: #7f8c8d;
+    text-transform: uppercase;
 }
 
 .stat-value {
-    font-size: 18px;
+    margin: 5px 0 0 0;
+    font-size: 22px;
     font-weight: bold;
-    color: #333;
+    color: #2c3e50;
 }
 
 .estante-trofeus {
-    background: #fff8e1;
-    border: 1px solid #ffe082;
-    padding: 15px;
+    background: #fff9e6;
+    padding: 20px;
     border-radius: 8px;
-    text-align: left;
+    border: 1px solid #ffeaa7;
 }
 
 .estante-trofeus h3 {
     margin-top: 0;
-    color: #b08d00;
-    font-size: 16px;
+    color: #d35400;
     text-align: center;
 }
 
 .trofeus-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-    font-size: 14px;
+}
+
+.trofeu-item {
+    font-size: 15px;
+    color: #34495e;
+}
+
+/* =======================================================
+   5. TELA 3: CAMPANHA
+======================================================== */
+.banner-campeao {
+    display: none;
+    background: #f1c40f;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    font-weight: bold;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 18px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+/* =======================================================
+   6. TELA 4: HEAD-TO-HEAD (H2H)
+======================================================== */
+.placar-h2h {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #2c3e50;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.lado-j1, .lado-j2 {
+    text-align: center;
+    width: 40%;
+}
+
+.pontuacao {
+    font-size: 48px;
+    font-weight: bold;
+    color: #f1c40f;
+}
+
+.versus {
+    font-size: 24px;
+    font-weight: bold;
+    color: #bdc3c7;
+}
+
+.partida-h2h-item {
+    background: #f9f9f9;
+    border-left: 5px solid #3498db;
+    padding: 12px 20px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.partida-h2h-item > div:first-child {
+    flex: 1;
+    min-width: 250px;
+}
+
+.partida-h2h-item > div:last-child {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: right;
+    letter-spacing: 1px;
+    min-width: 150px;
+}
+
+/* A Barra de Rolagem Interna da Lista do H2H */
+#lista-partidas-h2h {
+    max-height: 400px; /* Limita o tamanho e cria o scroll */
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+/* Estilo bonitão para a barra de rolagem (Scrollbar) */
+#lista-partidas-h2h::-webkit-scrollbar {
+    width: 8px;
+}
+#lista-partidas-h2h::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+    border-radius: 4px;
+}
+#lista-partidas-h2h::-webkit-scrollbar-thumb {
+    background: #bdc3c7; 
+    border-radius: 4px;
+}
+#lista-partidas-h2h::-webkit-scrollbar-thumb:hover {
+    background: #95a5a6; 
 }

@@ -8,12 +8,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎾 ATP Stats</h1>
+        <h1 style="text-align: center; color: #2c3e50;">🎾 ATP Stats</h1>
         
         <div class="abas">
             <button id="aba-jogador" class="aba ativa">Buscar Jogador</button>
             <button id="aba-torneio" class="aba">Buscar Torneio</button>
             <button id="aba-campanha" class="aba">Campanha</button>
+            <button id="aba-h2h" class="aba">Head-to-Head</button>
         </div>
 
         <div id="secao-jogador" class="secao">
@@ -27,10 +28,9 @@
                 <h2 id="nome-jogador">--</h2>
                 <p><strong>País:</strong> <span id="pais-jogador">--</span> | <strong>Mão:</strong> <span id="mao-jogador">--</span></p>
                 <hr>
-                
                 <div class="stats-grid">
                     <div>
-                        <p class="stat-label">Desempenho (Ano base)</p>
+                        <p class="stat-label">Desempenho (Carreira)</p>
                         <p class="stat-value"><span id="vitorias-jogador" style="color: #28a745;">0</span>V - <span id="derrotas-jogador" style="color: #dc3545;">0</span>D</p>
                     </div>
                     <div>
@@ -42,7 +42,6 @@
                         <p class="stat-value" id="piso-jogador">--</p>
                     </div>
                 </div>
-
                 <div class="estante-trofeus">
                     <h3>🏆 Títulos Conquistados</h3>
                     <div class="trofeus-grid">
@@ -50,22 +49,19 @@
                         <div class="trofeu-item"><strong>ATP Finals:</strong> <span id="t-f">0</span></div>
                         <div class="trofeu-item"><strong>Masters 1000:</strong> <span id="t-m">0</span></div>
                         <div class="trofeu-item"><strong>ATP 500/250:</strong> <span id="t-a">0</span></div>
-                        <div class = "trofeu-item"><strong>Challenger:</strong> <span id="t-c">0</span></div>
+                        <div class="trofeu-item"><strong>Challengers:</strong> <span id="t-c">0</span></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="secao-torneio" class="secao oculta">
+        <div id="secao-torneio" class="secao oculta" style="display: none;">
             <div class="search-box">
-                <input type="text" id="input-torneio" placeholder="Ex: Wimbledon, Roland Garros...">
-                <select id="select-ano">
-                    <option value="">Carregando anos...</option>
-                </select>
+                <input type="text" id="input-torneio" placeholder="Ex: Wimbledon...">
+                <select id="select-ano"><option value="">Anos...</option></select>
                 <button id="btn-buscar-torneio">Pesquisar</button>
                 <div id="lista-sugestoes-torneio" class="sugestoes"></div>
             </div>
-
             <div id="area-resultado-torneio" class="resultado-oculto">
                 <h2 id="nome-oficial-torneio">--</h2>
                 <h3 style="color: #d89f00;">🏆 Campeão: <span id="campeao-torneio">--</span></h3>
@@ -74,31 +70,54 @@
             </div>
         </div>
 
-        <div id="secao-campanha" class="secao oculta">
+        <div id="secao-campanha" class="secao oculta" style="display: none;">
             <div class="search-box">
-                <input type="text" id="input-campanha-jogador" placeholder="Nome do Jogador...">
+                <input type="text" id="input-campanha-jogador" placeholder="Jogador...">
                 <div id="lista-sugestoes-campanha-jogador" class="sugestoes"></div>
-                
-                <input type="text" id="input-campanha-torneio" placeholder="Nome do Torneio...">
+                <input type="text" id="input-campanha-torneio" placeholder="Torneio...">
                 <div id="lista-sugestoes-campanha-torneio" class="sugestoes"></div>
-                
-                <select id="select-ano-campanha">
-                    <option value="">Carregando anos...</option>
-                </select>
-                
+                <select id="select-ano-campanha"><option value="">Anos...</option></select>
                 <button id="btn-buscar-campanha">Ver Campanha</button>
             </div>
-
             <div id="area-resultado-campanha" class="resultado-oculto">
                 <h2 id="titulo-campanha">--</h2>
-                <div id="banner-campeao" class="banner-campeao">
-                    🏆 CAMPEÃO DO TORNEIO! 🏆
-                </div>
+                <div id="banner-campeao" class="banner-campeao">🏆 CAMPEÃO DO TORNEIO! 🏆</div>
                 <div id="lista-partidas"></div>
             </div>
         </div>
-    </div>
 
+        <div id="secao-h2h" class="secao oculta" style="display: none;">
+            <div class="search-box" style="display: flex; gap: 10px; align-items: flex-start; justify-content: center; background: transparent; border: none; padding: 0;">
+                <div style="position: relative; flex: 1;">
+                    <input type="text" id="input-h2h-j1" placeholder="Ex: Federer" style="width: 100%; box-sizing: border-box;">
+                    <div id="sugestoes-h2h-j1" class="sugestoes"></div>
+                </div>
+                <span style="font-weight: bold; font-size: 20px; padding-top: 10px;">X</span>
+                <div style="position: relative; flex: 1;">
+                    <input type="text" id="input-h2h-j2" placeholder="Ex: Nadal" style="width: 100%; box-sizing: border-box;">
+                    <div id="sugestoes-h2h-j2" class="sugestoes"></div>
+                </div>
+            </div>
+            <button id="btn-buscar-h2h" style="width: 100%; margin-top: 10px;">Comparar Confronto</button>
+
+            <div id="area-resultado-h2h" class="resultado-oculto" style="margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #2c3e50; color: white; padding: 20px; border-radius: 10px;">
+                    <div style="text-align: center; width: 40%;">
+                        <h2 id="nome-h2h-j1" style="margin: 0; font-size: 18px;">--</h2>
+                        <div id="vitorias-h2h-j1" style="font-size: 48px; font-weight: bold; color: #f1c40f;">0</div>
+                    </div>
+                    <div style="font-size: 24px; font-weight: bold; color: #bdc3c7;">VS</div>
+                    <div style="text-align: center; width: 40%;">
+                        <h2 id="nome-h2h-j2" style="margin: 0; font-size: 18px;">--</h2>
+                        <div id="vitorias-h2h-j2" style="font-size: 48px; font-weight: bold; color: #f1c40f;">0</div>
+                    </div>
+                </div>
+                <h3 style="text-align: center; margin-top: 30px; color: #333;">🎾 Histórico de Confrontos</h3>
+                <div id="lista-partidas-h2h"></div>
+            </div>
+        </div>
+
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
