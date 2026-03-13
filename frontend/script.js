@@ -1,7 +1,57 @@
 const API_URL = 'http://127.0.0.1:5000/api';
 
 // ==========================================
-// 1. CONTROLE DAS ABAS E NAVEGAÇÃO
+// 1. FUNÇÕES UTILITÁRIAS
+// ==========================================
+
+/**
+ * Wrapper de fetch que já trata erros HTTP e de rede de forma padronizada.
+ * Retorna o JSON diretamente, ou lança um erro com a mensagem da API.
+ */
+async function apiFetch(url) {
+    const res = await fetch(url);
+    const dados = await res.json();
+    if (!res.ok) {
+        throw new Error(dados.erro || 'Erro desconhecido na requisição.');
+    }
+    return dados;
+}
+
+/**
+ * Exibe uma mensagem de erro inline no elemento indicado,
+ * em vez de usar alert() que bloqueia a interface.
+ */
+function mostrarErro(idElemento, mensagem) {
+    const el = document.getElementById(idElemento);
+    if (!el) return;
+    el.innerHTML = `<p class="msg-erro">⚠️ ${mensagem}</p>`;
+    el.style.display = 'block';
+}
+
+/** Esconde a área de resultado e limpa qualquer erro anterior. */
+function limparResultado(idElemento) {
+    const el = document.getElementById(idElemento);
+    if (!el) return;
+    el.style.display = 'none';
+    el.innerHTML = '';
+}
+
+/** Altera o texto e desabilita/habilita um botão durante o carregamento. */
+function setBotaoCarregando(idBotao, carregando) {
+    const btn = document.getElementById(idBotao);
+    if (!btn) return;
+    btn.disabled = carregando;
+    btn.textContent = carregando ? 'Buscando...' : btn.dataset.textoOriginal;
+}
+
+// Salva o texto original de cada botão de busca para restaurar depois
+document.querySelectorAll('button[id^="btn-"]').forEach(btn => {
+    btn.dataset.textoOriginal = btn.textContent;
+});
+
+
+// ==========================================
+// 2. CONTROLE DAS ABAS E NAVEGAÇÃO
 // ==========================================
 const botoes = document.querySelectorAll('.aba');
 const secoes = document.querySelectorAll('.secao');
@@ -9,194 +59,297 @@ const secoes = document.querySelectorAll('.secao');
 botoes.forEach(botao => {
     botao.addEventListener('click', () => {
         botoes.forEach(b => b.classList.remove('ativa'));
-        secoes.forEach(s => { s.classList.add('oculta'); s.style.display = 'none'; });
-        
+        secoes.forEach(s => s.classList.add('oculta'));
+
         botao.classList.add('ativa');
         const idSecao = botao.id.replace('aba-', 'secao-');
         document.getElementById(idSecao).classList.remove('oculta');
-        document.getElementById(idSecao).style.display = 'block';
     });
 });
 
+
 // ==========================================
-// 2. AUTOCOMPLETE UNIVERSAL
+// 3. AUTOCOMPLETE UNIVERSAL
 // ==========================================
 function ativarSugestoes(idInput, idLista, endpoint) {
     const input = document.getElementById(idInput);
     const lista = document.getElementById(idLista);
-    if(!input || !lista) return;
+    if (!input || !lista) return;
+
+    let debounceTimer = null;
 
     input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
         const txt = input.value.trim();
-        if(txt.length < 2) { lista.innerHTML = ''; return; }
-        
-        fetch(`${API_URL}/${endpoint}/${txt}`)
-            .then(r => r.json())
-            .then(dados => {
+        if (txt.length < 2) { lista.innerHTML = ''; return; }
+
+        // Debounce: só busca 300ms após o usuário parar de digitar
+        debounceTimer = setTimeout(async () => {
+            try {
+                const dados = await apiFetch(`${API_URL}/${endpoint}/${encodeURIComponent(txt)}`);
                 lista.innerHTML = '';
                 dados.forEach(item => {
                     const div = document.createElement('div');
+                    div.className = 'sugestao-item';
                     div.textContent = item;
-                    div.style.padding = '10px';
-                    div.style.cursor = 'pointer';
-                    div.style.borderBottom = '1px solid #eee';
-                    div.style.backgroundColor = 'white';
                     div.addEventListener('click', () => { input.value = item; lista.innerHTML = ''; });
-                    div.addEventListener('mouseover', () => div.style.backgroundColor = '#f1f1f1');
-                    div.addEventListener('mouseout', () => div.style.backgroundColor = 'white');
                     lista.appendChild(div);
                 });
-            });
+            } catch {
+                lista.innerHTML = ''; // falha silenciosa no autocomplete é aceitável
+            }
+        }, 300);
     });
-    document.addEventListener('click', e => { if(e.target !== input) lista.innerHTML = ''; });
+
+    document.addEventListener('click', e => { if (e.target !== input) lista.innerHTML = ''; });
 }
 
-ativarSugestoes('input-jogador', 'lista-sugestoes', 'sugestoes');
-ativarSugestoes('input-torneio', 'lista-sugestoes-torneio', 'sugestoes_torneio');
-ativarSugestoes('input-campanha-jogador', 'lista-sugestoes-campanha-jogador', 'sugestoes');
-ativarSugestoes('input-campanha-torneio', 'lista-sugestoes-campanha-torneio', 'sugestoes_torneio');
-ativarSugestoes('input-h2h-j1', 'sugestoes-h2h-j1', 'sugestoes');
-ativarSugestoes('input-h2h-j2', 'sugestoes-h2h-j2', 'sugestoes');
+ativarSugestoes('input-jogador',           'lista-sugestoes',                   'sugestoes');
+ativarSugestoes('input-torneio',           'lista-sugestoes-torneio',           'sugestoes_torneio');
+ativarSugestoes('input-campanha-jogador',  'lista-sugestoes-campanha-jogador',  'sugestoes');
+ativarSugestoes('input-campanha-torneio',  'lista-sugestoes-campanha-torneio',  'sugestoes_torneio');
+ativarSugestoes('input-h2h-j1',            'sugestoes-h2h-j1',                  'sugestoes');
+ativarSugestoes('input-h2h-j2',            'sugestoes-h2h-j2',                  'sugestoes');
+
 
 // ==========================================
-// 3. PREENCHER ANOS NOS SELECTS
+// 4. PREENCHER ANOS NOS SELECTS
 // ==========================================
-fetch(`${API_URL}/anos`).then(r => r.json()).then(anos => {
-    const s1 = document.getElementById('select-ano');
-    const s2 = document.getElementById('select-ano-campanha');
-    const opcoes = '<option value="">Ano...</option>' + anos.map(a => `<option value="${a}">${a}</option>`).join('');
-    if(s1) s1.innerHTML = opcoes;
-    if(s2) s2.innerHTML = opcoes;
-});
+(async () => {
+    try {
+        const anos = await apiFetch(`${API_URL}/anos`);
+        const opcoes = '<option value="">Ano...</option>' + anos.map(a => `<option value="${a}">${a}</option>`).join('');
+        ['select-ano', 'select-ano-campanha'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = opcoes;
+        });
+    } catch {
+        // Se a API não estiver no ar, mostra aviso nos selects
+        ['select-ano', 'select-ano-campanha'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = '<option value="">API indisponível</option>';
+        });
+    }
+})();
+
 
 // ==========================================
-// 4. FUNCIONALIDADES DE BUSCA (AS 4 ABAS)
+// 5. FUNCIONALIDADES DE BUSCA (AS 4 ABAS)
 // ==========================================
 
 // ABA 1: Buscar Jogador
-document.getElementById('btn-buscar-jogador').addEventListener('click', () => {
+document.getElementById('btn-buscar-jogador').addEventListener('click', async () => {
     const nome = document.getElementById('input-jogador').value.trim();
-    if (!nome) return alert('Digite o nome do jogador!');
+    if (!nome) return mostrarErro('area-resultado-jogador', 'Digite o nome do jogador!');
 
-    fetch(`${API_URL}/jogador/${nome}`)
-        .then(res => { if (!res.ok) throw new Error("Jogador não encontrado"); return res.json(); })
-        .then(dados => {
-            document.getElementById('nome-jogador').textContent = dados.nome;
-            document.getElementById('pais-jogador').textContent = dados.pais;
-            document.getElementById('mao-jogador').textContent = dados.mao_dominante;
-            document.getElementById('vitorias-jogador').textContent = dados.vitorias;
-            document.getElementById('derrotas-jogador').textContent = dados.derrotas;
-            document.getElementById('aproveitamento-jogador').textContent = dados.aproveitamento;
-            document.getElementById('piso-jogador').textContent = dados.piso_favorito;
+    setBotaoCarregando('btn-buscar-jogador', true);
+    limparResultado('area-resultado-jogador');
 
-            document.getElementById('t-g').textContent = dados.titulos.G || 0;
-            document.getElementById('t-f').textContent = dados.titulos.F || 0;
-            document.getElementById('t-m').textContent = dados.titulos.M || 0;
-            document.getElementById('t-a').textContent = dados.titulos.A || 0;
-            document.getElementById('t-c').textContent = dados.titulos.C || 0;
-
-            document.getElementById('area-resultado-jogador').style.display = 'block';
-        })
-        .catch(err => {
-            alert(err.message);
-            document.getElementById('area-resultado-jogador').style.display = 'none';
-        });
+    try {
+        const dados = await apiFetch(`${API_URL}/jogador/${encodeURIComponent(nome)}`);
+        renderizarJogador(dados);
+    } catch (err) {
+        mostrarErro('area-resultado-jogador', err.message);
+    } finally {
+        setBotaoCarregando('btn-buscar-jogador', false);
+    }
 });
+
+function renderizarJogador(dados) {
+    const area = document.getElementById('area-resultado-jogador');
+    const mao = dados.mao_dominante;
+
+    area.innerHTML = `
+        <h2>${dados.nome}</h2>
+        <p class="info-basica">
+            <strong>País:</strong> ${dados.pais}
+            <span class="separador">|</span>
+            <strong>Mão:</strong> ${mao}
+        </p>
+        <hr>
+        <div class="stats-grid">
+            <div>
+                <p class="stat-label">Desempenho (Carreira)</p>
+                <p class="stat-value">
+                    <span class="cor-vitoria">${dados.vitorias}</span>V
+                    - <span class="cor-derrota">${dados.derrotas}</span>D
+                </p>
+            </div>
+            <div>
+                <p class="stat-label">Aproveitamento</p>
+                <p class="stat-value">${dados.aproveitamento}%</p>
+            </div>
+            <div>
+                <p class="stat-label">Piso Favorito</p>
+                <p class="stat-value">${dados.piso_favorito}</p>
+            </div>
+        </div>
+        <div class="estante-trofeus">
+            <h3>🏆 Títulos Conquistados</h3>
+            <div class="trofeus-grid">
+                <div class="trofeu-item"><strong>Grand Slam:</strong> ${dados.titulos.G || 0}</div>
+                <div class="trofeu-item"><strong>ATP Finals:</strong> ${dados.titulos.F || 0}</div>
+                <div class="trofeu-item"><strong>Masters 1000:</strong> ${dados.titulos.M || 0}</div>
+                <div class="trofeu-item"><strong>ATP 500/250:</strong> ${dados.titulos.A || 0}</div>
+                <div class="trofeu-item"><strong>Challengers:</strong> ${dados.titulos.C || 0}</div>
+            </div>
+        </div>
+    `;
+    area.style.display = 'block';
+}
+
 
 // ABA 2: Buscar Torneio
-document.getElementById('btn-buscar-torneio').addEventListener('click', () => {
+document.getElementById('btn-buscar-torneio').addEventListener('click', async () => {
     const torneio = document.getElementById('input-torneio').value.trim();
-    const ano = document.getElementById('select-ano').value;
-    if (!torneio || !ano) return alert('Preencha o torneio e o ano!');
+    const ano     = document.getElementById('select-ano').value;
+    if (!torneio || !ano) return mostrarErro('area-resultado-torneio', 'Preencha o torneio e o ano!');
 
-    fetch(`${API_URL}/torneio/${torneio}/${ano}`)
-        .then(res => { if (!res.ok) throw new Error("Torneio não encontrado neste ano"); return res.json(); })
-        .then(dados => {
-            document.getElementById('nome-oficial-torneio').textContent = `${dados.torneio_oficial} (${dados.ano})`;
-            document.getElementById('campeao-torneio').textContent = dados.campeao;
-            document.getElementById('vice-torneio').textContent = dados.vice;
-            document.getElementById('placar-torneio').textContent = dados.placar;
-            document.getElementById('area-resultado-torneio').style.display = 'block';
-        })
-        .catch(err => {
-            alert(err.message);
-            document.getElementById('area-resultado-torneio').style.display = 'none';
-        });
+    setBotaoCarregando('btn-buscar-torneio', true);
+    limparResultado('area-resultado-torneio');
+
+    try {
+        const dados = await apiFetch(`${API_URL}/torneio/${encodeURIComponent(torneio)}/${ano}`);
+        const area = document.getElementById('area-resultado-torneio');
+        area.innerHTML = `
+            <h2>${dados.torneio_oficial} (${dados.ano})</h2>
+            <h3 class="titulo-campeao">🏆 Campeão: ${dados.campeao}</h3>
+            <p><strong>🥈 Vice:</strong> ${dados.vice}</p>
+            <p><strong>🎾 Placar:</strong> ${dados.placar}</p>
+        `;
+        area.style.display = 'block';
+    } catch (err) {
+        mostrarErro('area-resultado-torneio', err.message);
+    } finally {
+        setBotaoCarregando('btn-buscar-torneio', false);
+    }
 });
 
-// ABA 3: Campanha (AGORA COM AS CORES GARANTIDAS)
-document.getElementById('btn-buscar-campanha').addEventListener('click', () => {
+
+// ABA 3: Campanha
+document.getElementById('btn-buscar-campanha').addEventListener('click', async () => {
     const jogador = document.getElementById('input-campanha-jogador').value.trim();
     const torneio = document.getElementById('input-campanha-torneio').value.trim();
-    const ano = document.getElementById('select-ano-campanha').value;
-    if (!jogador || !torneio || !ano) return alert('Preencha todos os campos!');
+    const ano     = document.getElementById('select-ano-campanha').value;
+    if (!jogador || !torneio || !ano) return mostrarErro('area-resultado-campanha', 'Preencha todos os campos!');
 
-    fetch(`${API_URL}/campanha/${jogador}/${torneio}/${ano}`)
-        .then(res => { if (!res.ok) throw new Error("Campanha não encontrada"); return res.json(); })
-        .then(dados => {
-            document.getElementById('titulo-campanha').textContent = `${dados.jogador} em ${dados.torneio} (${dados.ano})`;
-            
-            const banner = document.getElementById('banner-campeao');
-            banner.style.display = dados.campeao ? 'block' : 'none';
+    setBotaoCarregando('btn-buscar-campanha', true);
+    limparResultado('area-resultado-campanha');
 
-            const lista = document.getElementById('lista-partidas');
-            lista.innerHTML = '';
-            
-            dados.partidas.forEach(p => {
-                const item = document.createElement('div');
-                item.style.padding = '10px';
-                item.style.borderBottom = '1px solid #ccc';
-                
-                // LÓGICA DE CORES
-                const cor = p.resultado === 'V' ? '#28a745' : '#dc3545';
-                const textoResultado = p.resultado === 'V' ? 'Vitória sobre' : 'Derrota para';
+    try {
+        const dados = await apiFetch(`${API_URL}/campanha/${encodeURIComponent(jogador)}/${encodeURIComponent(torneio)}/${ano}`);
 
-                item.innerHTML = `
-                    <strong>${p.rodada}</strong>: <span style="color: ${cor}; font-weight: bold;">${textoResultado}</span> ${p.oponente} <br>
-                    <em>Placar: ${p.placar}</em>
-                `;
-                lista.appendChild(item);
-            });
+        const bannerCampeao = dados.campeao
+            ? `<div class="banner-campeao" style="display:block;">🏆 CAMPEÃO DO TORNEIO! 🏆</div>`
+            : '';
 
-            document.getElementById('area-resultado-campanha').style.display = 'block';
-        })
-        .catch(err => {
-            alert(err.message);
-            document.getElementById('area-resultado-campanha').style.display = 'none';
-        });
+        const partidasHtml = dados.partidas.map(p => {
+            const classeResultado = p.resultado === 'V' ? 'cor-vitoria' : 'cor-derrota';
+            const textoResultado  = p.resultado === 'V' ? 'Vitória sobre' : 'Derrota para';
+            return `
+                <div class="partida-campanha-item">
+                    <strong>${p.rodada}</strong>:
+                    <span class="${classeResultado} negrito">${textoResultado}</span> ${p.oponente}
+                    <br><em>Placar: ${p.placar}</em>
+                </div>`;
+        }).join('');
+
+        const area = document.getElementById('area-resultado-campanha');
+        area.innerHTML = `
+            <h2>${dados.jogador} em ${dados.torneio} (${dados.ano})</h2>
+            ${bannerCampeao}
+            ${partidasHtml}
+        `;
+        area.style.display = 'block';
+    } catch (err) {
+        mostrarErro('area-resultado-campanha', err.message);
+    } finally {
+        setBotaoCarregando('btn-buscar-campanha', false);
+    }
 });
 
-// ABA 4: Head-to-Head (H2H)
-document.getElementById('btn-buscar-h2h').addEventListener('click', () => {
+
+// ABA 4: Head-to-Head
+document.getElementById('btn-buscar-h2h').addEventListener('click', async () => {
     const j1 = document.getElementById('input-h2h-j1').value.trim();
     const j2 = document.getElementById('input-h2h-j2').value.trim();
-    if(!j1 || !j2) return alert("Digite o nome dos dois jogadores!");
+    if (!j1 || !j2) return mostrarErro('area-resultado-h2h', 'Digite o nome dos dois jogadores!');
 
-    fetch(`${API_URL}/head_to_head/${j1}/${j2}`)
-        .then(r => { if(!r.ok) throw new Error("Confronto não encontrado"); return r.json(); })
-        .then(d => {
-            document.getElementById('nome-h2h-j1').textContent = d.jogador1;
-            document.getElementById('nome-h2h-j2').textContent = d.jogador2;
-            document.getElementById('vitorias-h2h-j1').textContent = d.vitorias_jogador1;
-            document.getElementById('vitorias-h2h-j2').textContent = d.vitorias_jogador2;
-            
-            const divLista = document.getElementById('lista-partidas-h2h');
-            divLista.innerHTML = '';
-            d.partidas.forEach(p => {
-                divLista.innerHTML += `
-                <div class="partida-h2h-item">
-                    <div>
-                        <span style="font-size: 12px; color: #7f8c8d;">${p.ano} - ${p.torneio} (${p.rodada})</span><br>
-                        <strong>Vencedor: ${p.vencedor}</strong>
-                    </div>
-                    <div>
-                        ${p.placar}
-                    </div>
+    setBotaoCarregando('btn-buscar-h2h', true);
+    limparResultado('area-resultado-h2h');
+
+    try {
+        const d = await apiFetch(`${API_URL}/head_to_head/${encodeURIComponent(j1)}/${encodeURIComponent(j2)}`);
+
+        // Linha comparativa de stats
+        function linhaComparativa(label, v1, v2, maior_e_melhor = true) {
+            const n1 = parseFloat(v1);
+            const n2 = parseFloat(v2);
+            const j1Vence = maior_e_melhor ? n1 > n2 : n1 < n2;
+            const j2Vence = maior_e_melhor ? n2 > n1 : n2 < n1;
+            return `
+                <div class="stats-comparativas-linha">
+                    <span class="stat-comp-valor ${j1Vence ? 'stat-destaque' : ''}">${v1}</span>
+                    <span class="stat-comp-label">${label}</span>
+                    <span class="stat-comp-valor ${j2Vence ? 'stat-destaque' : ''}">${v2}</span>
                 </div>`;
-            });
-            document.getElementById('area-resultado-h2h').style.display = 'block';
-        }).catch(err => {
-            alert(err.message);
-            document.getElementById('area-resultado-h2h').style.display = 'none';
-        });
+        }
+
+        const s1 = d.stats_jogador1;
+        const s2 = d.stats_jogador2;
+
+        const statsHtml = `
+            <div class="stats-comparativas">
+                <div class="stats-comp-header">
+                    <span>${d.jogador1.split(' ').pop()}</span>
+                    <span>Estatísticas de Carreira</span>
+                    <span>${d.jogador2.split(' ').pop()}</span>
+                </div>
+                ${linhaComparativa('Vitórias', s1.vitorias, s2.vitorias)}
+                ${linhaComparativa('Aproveitamento', s1.aproveitamento + '%', s2.aproveitamento + '%')}
+                ${linhaComparativa('Grand Slams 🏆', s1.grand_slams, s2.grand_slams)}
+                ${linhaComparativa('ATP Finals', s1.atp_finals, s2.atp_finals)}
+                ${linhaComparativa('Masters 1000', s1.masters, s2.masters)}
+                ${linhaComparativa('ATP 500/250', s1.atp_500_250, s2.atp_500_250)}
+                ${linhaComparativa('Challengers', s1.challengers, s2.challengers)}
+                <div class="stats-comparativas-linha">
+                    <span class="stat-comp-valor">${s1.piso_favorito}</span>
+                    <span class="stat-comp-label">Piso Favorito</span>
+                    <span class="stat-comp-valor">${s2.piso_favorito}</span>
+                </div>
+            </div>`;
+
+        const partidasHtml = d.partidas.map(p => `
+            <div class="partida-h2h-item">
+                <div>
+                    <span class="partida-h2h-meta">${p.ano} - ${p.torneio} (${p.rodada})</span><br>
+                    <strong>Vencedor: ${p.vencedor}</strong>
+                </div>
+                <div>${p.placar}</div>
+            </div>`
+        ).join('');
+
+        const area = document.getElementById('area-resultado-h2h');
+        area.innerHTML = `
+            <div class="placar-h2h">
+                <div class="lado-h2h">
+                    <h2 class="nome-h2h">${d.jogador1}</h2>
+                    <div class="pontuacao-h2h">${d.vitorias_jogador1}</div>
+                </div>
+                <div class="versus-h2h">VS</div>
+                <div class="lado-h2h">
+                    <h2 class="nome-h2h">${d.jogador2}</h2>
+                    <div class="pontuacao-h2h">${d.vitorias_jogador2}</div>
+                </div>
+            </div>
+            ${statsHtml}
+            <h3 class="titulo-historico">🎾 Histórico de Confrontos</h3>
+            <div id="lista-partidas-h2h">${partidasHtml}</div>
+        `;
+        area.style.display = 'block';
+    } catch (err) {
+        mostrarErro('area-resultado-h2h', err.message);
+    } finally {
+        setBotaoCarregando('btn-buscar-h2h', false);
+    }
 });

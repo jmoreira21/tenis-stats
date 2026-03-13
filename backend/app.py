@@ -267,11 +267,46 @@ def head_to_head(jogador1, jogador2):
                 "placar": p['score']
             })
 
+        def stats_jogador(id_jog):
+            v = conn.execute("SELECT COUNT(*) FROM partidas WHERE winner_id = ?", (id_jog,)).fetchone()[0]
+            d = conn.execute("SELECT COUNT(*) FROM partidas WHERE loser_id = ?",  (id_jog,)).fetchone()[0]
+            total = v + d
+            aproveitamento = round((v / total) * 100, 1) if total > 0 else 0
+
+            titulos_q = conn.execute(
+                "SELECT tourney_level, COUNT(*) as qtd FROM partidas WHERE winner_id = ? AND round = 'F' GROUP BY tourney_level",
+                (id_jog,)
+            ).fetchall()
+            titulos = {"G": 0, "F": 0, "M": 0, "A": 0, "C": 0}
+            for linha in titulos_q:
+                if linha['tourney_level'] in titulos:
+                    titulos[linha['tourney_level']] = linha['qtd']
+
+            sup_q = conn.execute(
+                "SELECT surface FROM partidas WHERE winner_id = ? AND surface IS NOT NULL GROUP BY surface ORDER BY COUNT(*) DESC LIMIT 1",
+                (id_jog,)
+            ).fetchone()
+            piso = TRADUCAO_SUPERFICIE.get(sup_q['surface'], sup_q['surface']) if sup_q else "Sem dados"
+
+            return {
+                "vitorias": v,
+                "derrotas": d,
+                "aproveitamento": aproveitamento,
+                "grand_slams": titulos["G"],
+                "atp_finals": titulos["F"],
+                "masters": titulos["M"],
+                "atp_500_250": titulos["A"],
+                "challengers": titulos["C"],
+                "piso_favorito": piso
+            }
+
         return jsonify({
             "jogador1": jog1['nome_completo'],
             "jogador2": jog2['nome_completo'],
             "vitorias_jogador1": vitorias_j1,
             "vitorias_jogador2": vitorias_j2,
+            "stats_jogador1": stats_jogador(id_jog1),
+            "stats_jogador2": stats_jogador(id_jog2),
             "partidas": lista_partidas
         })
     except Exception as e:
