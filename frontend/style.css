@@ -47,12 +47,25 @@ hr {
     flex: 1;
     background: none;
     border: none;
-    padding: 12px 0;
-    font-size: 15px;
+    padding: 12px 4px;
+    font-size: 14px;
     font-weight: bold;
     color: #7f8c8d;
     cursor: pointer;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.aba-icone {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.aba-texto {
+    font-size: 13px;
 }
 
 .aba:hover {
@@ -73,19 +86,21 @@ hr {
 ======================================================== */
 .search-box {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 20px;
     position: relative;
-    overflow: visible; /* Garante que a lista não seja cortada */
 }
 
 input, select {
     flex: 1;
+    min-width: 0; /* evita overflow em flex */
     padding: 12px;
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 16px;
     outline: none;
+    box-sizing: border-box;
 }
 
 input:focus, select:focus {
@@ -102,13 +117,13 @@ button {
     font-weight: bold;
     cursor: pointer;
     transition: background 0.3s;
+    white-space: nowrap;
 }
 
 button:hover {
     background-color: #219150;
 }
 
-/* A Mágica do Autocomplete */
 .sugestoes {
     position: absolute;
     top: 100%;
@@ -120,12 +135,29 @@ button:hover {
     box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
     max-height: 250px;
     overflow-y: auto;
-    z-index: 9999; /* Joga a lista para frente de tudo */
+    z-index: 9999;
 }
 
 /* =======================================================
    4. TELA 1: ESTATÍSTICAS DO JOGADOR
 ======================================================== */
+.info-basica {
+    margin: 8px 0;
+}
+
+.separador {
+    margin: 0 8px;
+    color: #bdc3c7;
+}
+
+.cor-vitoria {
+    color: #28a745;
+}
+
+.cor-derrota {
+    color: #dc3545;
+}
+
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -176,7 +208,15 @@ button:hover {
 }
 
 /* =======================================================
-   5. TELA 3: CAMPANHA
+   5. TELA 2: TORNEIO
+======================================================== */
+.titulo-campeao {
+    color: #d89f00;
+    margin-top: 10px;
+}
+
+/* =======================================================
+   6. TELA 3: CAMPANHA
 ======================================================== */
 .banner-campeao {
     display: none;
@@ -192,8 +232,38 @@ button:hover {
 }
 
 /* =======================================================
-   6. TELA 4: HEAD-TO-HEAD (H2H)
+   7. TELA 4: HEAD-TO-HEAD (H2H)
 ======================================================== */
+.h2h-inputs {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.h2h-campo {
+    position: relative;
+    flex: 1;
+}
+
+.h2h-campo input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.h2h-vs {
+    font-weight: bold;
+    font-size: 20px;
+    padding-top: 12px;
+    color: #7f8c8d;
+    flex-shrink: 0;
+}
+
+.btn-h2h {
+    width: 100%;
+    margin-top: 4px;
+}
+
 .placar-h2h {
     display: flex;
     justify-content: space-between;
@@ -205,21 +275,35 @@ button:hover {
     margin-top: 20px;
 }
 
-.lado-j1, .lado-j2 {
+.lado-h2h {
     text-align: center;
     width: 40%;
 }
 
-.pontuacao {
+.nome-h2h {
+    margin: 0;
+    font-size: 18px;
+    color: white;
+    word-break: break-word;
+}
+
+.pontuacao-h2h {
     font-size: 48px;
     font-weight: bold;
     color: #f1c40f;
 }
 
-.versus {
+.versus-h2h {
     font-size: 24px;
     font-weight: bold;
     color: #bdc3c7;
+    flex-shrink: 0;
+}
+
+.titulo-historico {
+    text-align: center;
+    margin-top: 30px;
+    color: #333;
 }
 
 .partida-h2h-item {
@@ -229,7 +313,7 @@ button:hover {
     margin-bottom: 12px;
     border-radius: 6px;
     display: flex;
-    flex-wrap: wrap; 
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 15px;
@@ -237,7 +321,7 @@ button:hover {
 
 .partida-h2h-item > div:first-child {
     flex: 1;
-    min-width: 250px;
+    min-width: 200px;
 }
 
 .partida-h2h-item > div:last-child {
@@ -245,12 +329,16 @@ button:hover {
     font-weight: bold;
     text-align: right;
     letter-spacing: 1px;
-    min-width: 150px;
+    min-width: 120px;
 }
 
-/* A Barra de Rolagem Interna da Lista do H2H */
+.partida-h2h-meta {
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
 #lista-partidas-h2h {
-    max-height: 400px; /* Limita o tamanho e cria o scroll */
+    max-height: 400px;
     overflow-y: auto;
     padding-right: 10px;
     margin-top: 15px;
@@ -258,18 +346,64 @@ button:hover {
     padding-top: 10px;
 }
 
-/* Estilo bonitão para a barra de rolagem (Scrollbar) */
-#lista-partidas-h2h::-webkit-scrollbar {
-    width: 8px;
-}
-#lista-partidas-h2h::-webkit-scrollbar-track {
-    background: #f1f1f1; 
-    border-radius: 4px;
-}
-#lista-partidas-h2h::-webkit-scrollbar-thumb {
-    background: #bdc3c7; 
-    border-radius: 4px;
-}
-#lista-partidas-h2h::-webkit-scrollbar-thumb:hover {
-    background: #95a5a6; 
+#lista-partidas-h2h::-webkit-scrollbar { width: 8px; }
+#lista-partidas-h2h::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+#lista-partidas-h2h::-webkit-scrollbar-thumb { background: #bdc3c7; border-radius: 4px; }
+#lista-partidas-h2h::-webkit-scrollbar-thumb:hover { background: #95a5a6; }
+
+/* =======================================================
+   8. RESPONSIVIDADE
+======================================================== */
+@media (max-width: 500px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 16px;
+    }
+
+    /* Abas: só ícone em telas pequenas */
+    .aba-texto {
+        display: none;
+    }
+
+    .aba {
+        font-size: 20px;
+        padding: 10px 4px;
+    }
+
+    /* Stats do jogador: empilhar em 1 coluna */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    /* Títulos: 1 coluna */
+    .trofeus-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Busca: empilhar input e botão */
+    .search-box {
+        flex-direction: column;
+    }
+
+    input, select, button {
+        width: 100%;
+    }
+
+    /* H2H placar: reduzir fonte */
+    .pontuacao-h2h {
+        font-size: 36px;
+    }
+
+    .nome-h2h {
+        font-size: 14px;
+    }
+
+    .partida-h2h-item > div:last-child {
+        min-width: 80px;
+        font-size: 15px;
+    }
 }
