@@ -137,6 +137,20 @@ def buscar_jogador(nome_pesquisado):
 
         mao = {"R": "Destro", "L": "Canhoto"}.get(jogador['hand'], "Outro")
 
+        # Desempenho por superfície para o gráfico
+        superficies = ['Clay', 'Hard', 'Grass', 'Carpet']
+        desempenho_sup = {}
+        for sup in superficies:
+            v = conn.execute(
+                "SELECT COUNT(*) FROM partidas WHERE winner_id = ? AND surface = ?", (id_jogador, sup)
+            ).fetchone()[0]
+            d = conn.execute(
+                "SELECT COUNT(*) FROM partidas WHERE loser_id = ? AND surface = ?", (id_jogador, sup)
+            ).fetchone()[0]
+            if v + d > 0:
+                label = TRADUCAO_SUPERFICIE.get(sup, sup)
+                desempenho_sup[label] = {"vitorias": v, "derrotas": d}
+
         return jsonify({
             "nome": jogador['nome_completo'],
             "pais": jogador['ioc'],
@@ -145,7 +159,8 @@ def buscar_jogador(nome_pesquisado):
             "derrotas": derrotas,
             "aproveitamento": aproveitamento,
             "piso_favorito": superficie_favorita,
-            "titulos": titulos
+            "titulos": titulos,
+            "desempenho_por_superficie": desempenho_sup
         })
     except Exception as e:
         return erro(f"Erro interno: {str(e)}", 500)

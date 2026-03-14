@@ -155,6 +155,9 @@ document.getElementById('btn-buscar-jogador').addEventListener('click', async ()
     }
 });
 
+// Guarda referência do gráfico atual para destruir antes de recriar
+let graficoPiso = null;
+
 function renderizarJogador(dados) {
     const area = document.getElementById('area-resultado-jogador');
     const mao = dados.mao_dominante;
@@ -194,8 +197,80 @@ function renderizarJogador(dados) {
                 <div class="trofeu-item"><strong>Challengers:</strong> ${dados.titulos.C || 0}</div>
             </div>
         </div>
+        <div class="grafico-superficie">
+            <h3>📊 Desempenho por Superfície</h3>
+            <div class="grafico-wrapper">
+                <canvas id="canvas-superficie"></canvas>
+            </div>
+        </div>
     `;
     area.style.display = 'block';
+
+    // Destrói gráfico anterior se existir (evita duplicação ao buscar outro jogador)
+    if (graficoPiso) { graficoPiso.destroy(); graficoPiso = null; }
+
+    const sup = dados.desempenho_por_superficie;
+    const labels = Object.keys(sup);
+
+    if (labels.length === 0) return;
+
+    const COR_VITORIA  = '#28a745';
+    const COR_DERROTA  = '#dc3545';
+    const COR_V_ALPHA  = 'rgba(40, 167, 69, 0.15)';
+    const COR_D_ALPHA  = 'rgba(220, 53, 69, 0.15)';
+
+    graficoPiso = new Chart(document.getElementById('canvas-superficie'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Vitórias',
+                    data: labels.map(l => sup[l].vitorias),
+                    backgroundColor: COR_V_ALPHA,
+                    borderColor: COR_VITORIA,
+                    borderWidth: 2,
+                    borderRadius: 6,
+                },
+                {
+                    label: 'Derrotas',
+                    data: labels.map(l => sup[l].derrotas),
+                    backgroundColor: COR_D_ALPHA,
+                    borderColor: COR_DERROTA,
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        afterLabel(ctx) {
+                            const piso = labels[ctx.dataIndex];
+                            const v = sup[piso].vitorias;
+                            const d = sup[piso].derrotas;
+                            const apr = Math.round((v / (v + d)) * 100);
+                            return `Aproveitamento: ${apr}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
 }
 
 
