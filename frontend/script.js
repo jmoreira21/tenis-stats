@@ -189,13 +189,8 @@ function renderizarJogador(dados) {
         </div>
         <div class="estante-trofeus">
             <h3>🏆 Títulos Conquistados</h3>
-            <div class="trofeus-grid">
-                <div class="trofeu-item"><strong>Grand Slam:</strong> ${dados.titulos.G || 0}</div>
-                <div class="trofeu-item"><strong>ATP Finals:</strong> ${dados.titulos.F || 0}</div>
-                <div class="trofeu-item"><strong>Masters 1000:</strong> ${dados.titulos.M || 0}</div>
-                <div class="trofeu-item"><strong>ATP 500/250:</strong> ${dados.titulos.A || 0}</div>
-                <div class="trofeu-item"><strong>Challengers:</strong> ${dados.titulos.C || 0}</div>
-            </div>
+            <p class="trofeus-dica">ℹ️ Passe o mouse sobre um título para ver os detalhes</p>
+            <div class="trofeus-grid" id="trofeus-grid"></div>
         </div>
         <div class="grafico-superficie">
             <h3>📊 Desempenho por Superfície</h3>
@@ -216,6 +211,81 @@ function renderizarJogador(dados) {
     `;
     area.style.display = 'block';
 
+    // Busca os títulos detalhados e monta o grid com tooltips
+    const NIVEL_CHAVE  = { G: 'Grand Slam', F: 'ATP Finals', M: 'Masters 1000', A: 'ATP 500/250', C: 'Challengers' };
+    const grid = document.getElementById('trofeus-grid');
+    if (grid) {
+        // Renderiza imediatamente com os totais (sem tooltip ainda)
+        ['G','F','M','A','C'].forEach(chave => {
+            const qtd = dados.titulos[chave] || 0;
+            const div = document.createElement('div');
+            div.className = 'trofeu-item' + (qtd > 0 ? ' trofeu-clicavel' : '');
+            div.dataset.chave = chave;
+            div.innerHTML = qtd > 0
+                ? `<strong>${NIVEL_CHAVE[chave]}:</strong> <span class="trofeu-qtd">${qtd} <span class="trofeu-hint">▴</span></span>`
+                : `<strong>${NIVEL_CHAVE[chave]}:</strong> <span class="trofeu-zero">0</span>`;
+            grid.appendChild(div);
+        });
+
+        // Busca os detalhes e adiciona tooltips nos itens com títulos
+        apiFetch(`${API_URL}/titulos/${encodeURIComponent(dados.nome)}`)
+            .then(titulos => {
+                // Tooltip compartilhado — um único elemento no body, reposicionado no hover
+                let tooltip = document.getElementById('trofeu-tooltip-global');
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.id = 'trofeu-tooltip-global';
+                    tooltip.className = 'trofeu-tooltip';
+                    document.body.appendChild(tooltip);
+                }
+
+                grid.querySelectorAll('.trofeu-clicavel').forEach(div => {
+                    const chave = div.dataset.chave;
+                    const lista = titulos[chave];
+                    if (!lista || lista.length === 0) return;
+
+                    const linhas = lista.map(t => `🏆 ${t.torneio} — ${t.ano}`).join('<br>');
+
+                    div.addEventListener('mouseenter', () => {
+                        tooltip.innerHTML = linhas;
+                        tooltip.classList.add('visivel');
+
+                        // Posiciona acima do item, centralizado, dentro da viewport
+                        const rect = div.getBoundingClientRect();
+                        const tooltipH = Math.min(260, lista.length * 29 + 20);
+                        const top = Math.max(8, rect.top - tooltipH - 8);
+                        const left = rect.left + rect.width / 2;
+
+                        tooltip.style.top       = `${top}px`;
+                        tooltip.style.left      = `${left}px`;
+                        tooltip.style.transform = 'translateX(-50%)';
+
+                        requestAnimationFrame(() => {
+                            const tRect = tooltip.getBoundingClientRect();
+                            if (tRect.right > window.innerWidth - 8)
+                                tooltip.style.left = `${window.innerWidth - tRect.width / 2 - 8}px`;
+                            if (tRect.left < 8)
+                                tooltip.style.left = `${tRect.width / 2 + 8}px`;
+                        });
+                    });
+
+                    // Só esconde quando o mouse sair do item E não estiver sobre o tooltip
+                    div.addEventListener('mouseleave', () => {
+                        setTimeout(() => {
+                            if (!tooltip.matches(':hover')) {
+                                tooltip.classList.remove('visivel');
+                            }
+                        }, 80);
+                    });
+
+                    tooltip.addEventListener('mouseleave', () => {
+                        tooltip.classList.remove('visivel');
+                    });
+                });
+            })
+            .catch(() => {}); // falha silenciosa — os totais já estão visíveis
+    }
+
     // Destrói gráfico anterior se existir (evita duplicação ao buscar outro jogador)
     if (graficoPiso) { graficoPiso.destroy(); graficoPiso = null; }
 
@@ -229,11 +299,12 @@ function renderizarJogador(dados) {
     const COR_V_ALPHA  = 'rgba(40, 167, 69, 0.15)';
     const COR_D_ALPHA  = 'rgba(220, 53, 69, 0.15)';
 
-    // Popular o select de anos da temporada com os mesmos anos já carregados
+    // Popular o select de anos da temporada diretamente do select de campanha
+    // (ambos têm os mesmos anos carregados da API)
     const selectTemporada = document.getElementById('select-ano-temporada');
-    const selectAnoRef = document.getElementById('select-ano');
-    if (selectAnoRef && selectTemporada) {
-        selectTemporada.innerHTML = selectAnoRef.innerHTML;
+    const selectCampanha  = document.getElementById('select-ano-campanha');
+    if (selectCampanha && selectTemporada) {
+        selectTemporada.innerHTML = selectCampanha.innerHTML;
     }
 
     // Handler do botão Ver Temporada — usa closure para capturar o nome do jogador atual

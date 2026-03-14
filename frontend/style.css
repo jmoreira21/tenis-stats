@@ -205,6 +205,63 @@ button:hover {
 .trofeu-item {
     font-size: 15px;
     color: #34495e;
+    position: relative;
+}
+
+/* Dica de hover */
+.trofeus-dica {
+    font-size: 12px;
+    color: #95a5a6;
+    margin: -8px 0 12px 0;
+    text-align: center;
+}
+
+/* Item com títulos — interativo */
+.trofeu-clicavel {
+    cursor: default;
+}
+
+.trofeu-clicavel .trofeu-qtd {
+    border-bottom: 2px dotted #d35400;
+    padding-bottom: 1px;
+    color: #d35400;
+}
+
+.trofeu-hint {
+    font-size: 10px;
+    color: #d35400;
+    opacity: 0.7;
+}
+
+/* Zero — apagado */
+.trofeu-zero {
+    color: #bdc3c7;
+}
+
+/* Tooltip */
+.trofeu-tooltip {
+    display: none;
+    position: fixed;
+    background: #2c3e50;
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.8;
+    padding: 10px 14px;
+    border-radius: 8px;
+    white-space: nowrap;
+    z-index: 9999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    pointer-events: auto;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.trofeu-tooltip::-webkit-scrollbar { width: 4px; }
+.trofeu-tooltip::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.trofeu-tooltip::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.35); border-radius: 4px; }
+
+.trofeu-tooltip.visivel {
+    display: block;
 }
 
 /* =======================================================
