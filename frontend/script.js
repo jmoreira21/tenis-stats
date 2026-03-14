@@ -119,7 +119,7 @@ ativarSugestoes('input-h2h-j2',            'sugestoes-h2h-j2',                  
     try {
         const anos = await apiFetch(`${API_URL}/anos`);
         const opcoes = '<option value="">Ano...</option>' + anos.map(a => `<option value="${a}">${a}</option>`).join('');
-        ['select-ano', 'select-ano-campanha'].forEach(id => {
+        ['select-ano-campanha'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = opcoes;
         });
@@ -203,6 +203,16 @@ function renderizarJogador(dados) {
                 <canvas id="canvas-superficie"></canvas>
             </div>
         </div>
+        <div class="secao-temporada">
+            <div class="temporada-header">
+                <h3>🗓️ Ver Temporada</h3>
+                <div class="temporada-controles">
+                    <select id="select-ano-temporada"><option value="">Selecione o ano...</option></select>
+                    <button id="btn-buscar-temporada">Ver</button>
+                </div>
+            </div>
+            <div id="area-resultado-temporada"></div>
+        </div>
     `;
     area.style.display = 'block';
 
@@ -218,6 +228,30 @@ function renderizarJogador(dados) {
     const COR_DERROTA  = '#dc3545';
     const COR_V_ALPHA  = 'rgba(40, 167, 69, 0.15)';
     const COR_D_ALPHA  = 'rgba(220, 53, 69, 0.15)';
+
+    // Popular o select de anos da temporada com os mesmos anos já carregados
+    const selectTemporada = document.getElementById('select-ano-temporada');
+    const selectAnoRef = document.getElementById('select-ano');
+    if (selectAnoRef && selectTemporada) {
+        selectTemporada.innerHTML = selectAnoRef.innerHTML;
+    }
+
+    // Handler do botão Ver Temporada — usa closure para capturar o nome do jogador atual
+    const nomeJogadorAtual = dados.nome;
+    document.getElementById('btn-buscar-temporada').addEventListener('click', async () => {
+        const ano = document.getElementById('select-ano-temporada').value;
+        if (!ano) return;
+
+        const areaTemp = document.getElementById('area-resultado-temporada');
+        areaTemp.innerHTML = '<p class="temporada-carregando">Buscando temporada...</p>';
+
+        try {
+            const temp = await apiFetch(`${API_URL}/temporada/${encodeURIComponent(nomeJogadorAtual)}/${ano}`);
+            renderizarTemporada(temp, areaTemp);
+        } catch (err) {
+            areaTemp.innerHTML = `<p class="msg-erro">⚠️ ${err.message}</p>`;
+        }
+    });
 
     graficoPiso = new Chart(document.getElementById('canvas-superficie'), {
         type: 'bar',
@@ -274,23 +308,33 @@ function renderizarJogador(dados) {
 }
 
 
-// ABA 2: Buscar Torneio
+// ABA 2: Buscar Torneio — histórico completo
 document.getElementById('btn-buscar-torneio').addEventListener('click', async () => {
     const torneio = document.getElementById('input-torneio').value.trim();
-    const ano     = document.getElementById('select-ano').value;
-    if (!torneio || !ano) return mostrarErro('area-resultado-torneio', 'Preencha o torneio e o ano!');
+    if (!torneio) return mostrarErro('area-resultado-torneio', 'Digite o nome do torneio!');
 
     setBotaoCarregando('btn-buscar-torneio', true);
     limparResultado('area-resultado-torneio');
 
     try {
-        const dados = await apiFetch(`${API_URL}/torneio/${encodeURIComponent(torneio)}/${ano}`);
+        const dados = await apiFetch(`${API_URL}/torneio/${encodeURIComponent(torneio)}`);
         const area = document.getElementById('area-resultado-torneio');
+
+        const edicoesHtml = dados.edicoes.map(e => `
+            <div class="edicao-item">
+                <span class="edicao-ano">${e.ano}</span>
+                <div class="edicao-jogadores">
+                    <span class="edicao-campeao">🏆 ${e.campeao}</span>
+                    <span class="edicao-vice">🥈 ${e.vice}</span>
+                </div>
+                <span class="edicao-placar">${e.placar}</span>
+            </div>`
+        ).join('');
+
         area.innerHTML = `
-            <h2>${dados.torneio_oficial} (${dados.ano})</h2>
-            <h3 class="titulo-campeao">🏆 Campeão: ${dados.campeao}</h3>
-            <p><strong>🥈 Vice:</strong> ${dados.vice}</p>
-            <p><strong>🎾 Placar:</strong> ${dados.placar}</p>
+            <h2 class="torneio-historico-titulo">${dados.torneio_oficial}</h2>
+            <p class="torneio-historico-sub">${dados.edicoes.length} edições encontradas</p>
+            <div class="edicoes-lista">${edicoesHtml}</div>
         `;
         area.style.display = 'block';
     } catch (err) {
@@ -428,3 +472,103 @@ document.getElementById('btn-buscar-h2h').addEventListener('click', async () => 
         setBotaoCarregando('btn-buscar-h2h', false);
     }
 });
+
+
+// ==========================================
+// 6. RENDERIZAR TEMPORADA
+// ==========================================
+function renderizarTemporada(temp, container) {
+    const resumoHtml = `
+        <div class="temporada-resumo">
+            <div class="temporada-resumo-item">
+                <span class="stat-label">Torneios</span>
+                <span class="stat-value">${temp.total_torneios}</span>
+            </div>
+            <div class="temporada-resumo-item">
+                <span class="stat-label">Vitórias</span>
+                <span class="stat-value cor-vitoria">${temp.total_vitorias}</span>
+            </div>
+            <div class="temporada-resumo-item">
+                <span class="stat-label">Derrotas</span>
+                <span class="stat-value cor-derrota">${temp.total_derrotas}</span>
+            </div>
+            <div class="temporada-resumo-item">
+                <span class="stat-label">Títulos</span>
+                <span class="stat-value">${temp.titulos > 0 ? '🏆 ' + temp.titulos : temp.titulos}</span>
+            </div>
+        </div>`;
+
+    const torneiosHtml = temp.torneios.map((t, i) => {
+        const classeCampeao = t.campeao ? 'torneio-item campeao' : 'torneio-item';
+        const badge = t.campeao ? '<span class="badge-campeao">🏆 Campeão</span>' : '';
+        return `
+            <div class="${classeCampeao} torneio-clicavel" data-index="${i}" data-torneio="${encodeURIComponent(t.torneio)}">
+                <div class="torneio-info">
+                    <strong>${t.torneio}</strong>
+                    <span class="torneio-meta">${t.nivel} · ${t.superficie}</span>
+                </div>
+                <div class="torneio-resultado">
+                    ${badge}
+                    <span class="torneio-placar">${t.vitorias}V-${t.derrotas}D</span>
+                    <span class="torneio-rodada">${t.resultado}</span>
+                    <span class="torneio-seta">▼</span>
+                </div>
+            </div>
+            <div class="torneio-detalhe" id="detalhe-${i}"></div>`;
+    }).join('');
+
+    container.innerHTML = resumoHtml + torneiosHtml;
+
+    // Adiciona evento de clique em cada torneio
+    container.querySelectorAll('.torneio-clicavel').forEach(el => {
+        el.addEventListener('click', async () => {
+            const idx     = el.dataset.index;
+            const nomeTorneio = decodeURIComponent(el.dataset.torneio);
+            const detalhe = document.getElementById(`detalhe-${idx}`);
+            const seta    = el.querySelector('.torneio-seta');
+
+            // Acordeão: fecha se já está aberto
+            if (detalhe.classList.contains('aberto')) {
+                detalhe.classList.remove('aberto');
+                detalhe.innerHTML = '';
+                seta.textContent = '▼';
+                el.classList.remove('ativo');
+                return;
+            }
+
+            // Fecha qualquer outro aberto
+            container.querySelectorAll('.torneio-detalhe.aberto').forEach(d => {
+                d.classList.remove('aberto');
+                d.innerHTML = '';
+            });
+            container.querySelectorAll('.torneio-clicavel.ativo').forEach(e => {
+                e.classList.remove('ativo');
+                e.querySelector('.torneio-seta').textContent = '▼';
+            });
+
+            el.classList.add('ativo');
+            seta.textContent = '▲';
+            detalhe.classList.add('aberto');
+            detalhe.innerHTML = '<p class="temporada-carregando">Buscando partidas...</p>';
+
+            try {
+                const campanha = await apiFetch(
+                    `${API_URL}/campanha/${encodeURIComponent(temp.jogador)}/${encodeURIComponent(nomeTorneio)}/${temp.ano}`
+                );
+                detalhe.innerHTML = campanha.partidas.map(p => {
+                    const cls  = p.resultado === 'V' ? 'cor-vitoria' : 'cor-derrota';
+                    const txt  = p.resultado === 'V' ? 'Vitória sobre' : 'Derrota para';
+                    return `
+                        <div class="detalhe-partida">
+                            <span class="detalhe-rodada">${p.rodada}</span>
+                            <span class="detalhe-resultado ${cls}">${txt}</span>
+                            <span class="detalhe-oponente">${p.oponente}</span>
+                            <span class="detalhe-placar">${p.placar}</span>
+                        </div>`;
+                }).join('');
+            } catch (err) {
+                detalhe.innerHTML = `<p class="msg-erro">⚠️ ${err.message}</p>`;
+            }
+        });
+    });
+}

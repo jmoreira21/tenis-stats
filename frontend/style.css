@@ -445,7 +445,82 @@ button:hover {
 }
 
 /* =======================================================
-   9. GRÁFICO DE SUPERFÍCIE
+   9. ABA TORNEIO — HISTÓRICO DE EDIÇÕES
+======================================================== */
+.torneio-historico-titulo {
+    margin: 0 0 4px 0;
+    color: #2c3e50;
+}
+
+.torneio-historico-sub {
+    margin: 0 0 16px 0;
+    font-size: 13px;
+    color: #95a5a6;
+}
+
+.edicoes-lista {
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.edicoes-lista::-webkit-scrollbar { width: 6px; }
+.edicoes-lista::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+.edicoes-lista::-webkit-scrollbar-thumb { background: #bdc3c7; border-radius: 4px; }
+.edicoes-lista::-webkit-scrollbar-thumb:hover { background: #95a5a6; }
+
+.edicao-item {
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    margin-bottom: 8px;
+    background: #fff;
+    transition: background 0.15s;
+}
+
+.edicao-item:hover {
+    background: #f8f9fa;
+}
+
+.edicao-ano {
+    font-size: 15px;
+    font-weight: bold;
+    color: #7f8c8d;
+    text-align: center;
+}
+
+.edicao-jogadores {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.edicao-campeao {
+    font-size: 14px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.edicao-vice {
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+.edicao-placar {
+    font-size: 13px;
+    font-weight: bold;
+    color: #555;
+    letter-spacing: 0.4px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* =======================================================
+   10. GRÁFICO DE SUPERFÍCIE
 ======================================================== */
 .grafico-superficie {
     margin-top: 24px;
@@ -467,7 +542,253 @@ button:hover {
 }
 
 /* =======================================================
-   10. RESPONSIVIDADE
+   10. SEÇÃO TEMPORADA
+======================================================== */
+.secao-temporada {
+    margin-top: 24px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.temporada-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.temporada-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 15px;
+    white-space: nowrap;
+}
+
+.temporada-controles {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.temporada-controles select {
+    max-width: 160px;
+}
+
+.temporada-controles button {
+    padding: 10px 20px;
+    white-space: nowrap;
+}
+
+.temporada-carregando {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    padding: 12px 0;
+}
+
+/* Resumo de stats da temporada */
+.temporada-resumo {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.temporada-resumo-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Lista de torneios */
+.torneio-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    margin-bottom: 8px;
+    background: #fff;
+    transition: background 0.2s;
+}
+
+.torneio-item:hover {
+    background: #f8f9fa;
+}
+
+/* Torneio clicável */
+.torneio-clicavel {
+    cursor: pointer;
+    user-select: none;
+}
+
+.torneio-clicavel.ativo {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: transparent;
+}
+
+.torneio-clicavel.ativo:not(.campeao) {
+    background: #f0f7ff;
+    border-color: #3498db;
+}
+
+.torneio-clicavel.ativo.campeao {
+    border-color: #f1c40f;
+}
+
+.torneio-seta {
+    font-size: 11px;
+    color: #bdc3c7;
+    margin-left: 4px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+/* Painel de detalhe do acordeão */
+.torneio-detalhe {
+    display: none;
+    background: #f8fbff;
+    border: 1px solid #3498db;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.torneio-detalhe.aberto {
+    display: block;
+}
+
+.torneio-item.campeao + .torneio-detalhe {
+    border-color: #f1c40f;
+    background: #fffdf5;
+}
+
+/* Linhas de partida dentro do detalhe */
+.detalhe-partida {
+    display: grid;
+    grid-template-columns: 90px 110px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #eef2f7;
+    font-size: 14px;
+}
+
+.detalhe-partida:last-child {
+    border-bottom: none;
+}
+
+.detalhe-rodada {
+    font-size: 12px;
+    color: #7f8c8d;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.detalhe-resultado {
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.detalhe-oponente {
+    color: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.detalhe-placar {
+    font-size: 13px;
+    color: #555;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.torneio-item.campeao {
+    border-color: #f1c40f;
+    border-width: 2px;
+    background: linear-gradient(135deg, #fffdf0 0%, #fff8d6 100%);
+    box-shadow: 0 2px 8px rgba(241, 196, 15, 0.2);
+}
+
+.torneio-item.campeao .torneio-info strong {
+    color: #b7860b;
+}
+
+.torneio-item.campeao .torneio-rodada {
+    color: #b7860b;
+}
+
+.torneio-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+}
+
+.torneio-info strong {
+    font-size: 14px;
+    color: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.torneio-meta {
+    font-size: 12px;
+    color: #95a5a6;
+}
+
+.torneio-resultado {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.badge-campeao {
+    background: #f1c40f;
+    color: #7d6608;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.torneio-placar {
+    font-size: 13px;
+    color: #7f8c8d;
+    white-space: nowrap;
+}
+
+.torneio-rodada {
+    font-size: 13px;
+    font-weight: bold;
+    color: #2c3e50;
+    white-space: nowrap;
+    min-width: 70px;
+    text-align: right;
+}
+
+/* =======================================================
+   11. RESPONSIVIDADE
 ======================================================== */
 @media (max-width: 500px) {
     body {
@@ -506,6 +827,35 @@ button:hover {
 
     input, select, button {
         width: 100%;
+    }
+
+    /* Temporada: resumo em 2 colunas no mobile */
+    .temporada-resumo {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .torneio-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .torneio-resultado {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .detalhe-partida {
+        grid-template-columns: 80px 1fr;
+        grid-template-rows: auto auto;
+    }
+
+    .detalhe-resultado {
+        text-align: right;
+    }
+
+    .detalhe-placar {
+        grid-column: 2;
+        text-align: right;
     }
 
     /* H2H placar: reduzir fonte */

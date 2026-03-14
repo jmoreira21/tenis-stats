@@ -167,7 +167,130 @@ def buscar_jogador(nome_pesquisado):
     finally:
         conn.close()
 
-# 2. ABA DE TORNEIO
+# 1.5 ROTA DE TEMPORADA
+@app.route('/api/temporada/<jogador>/<ano>', methods=['GET'])
+def buscar_temporada(jogador, ano):
+    conn = conectar_banco()
+    try:
+        jog = buscar_jogador_por_nome(conn, jogador)
+        if not jog:
+            return erro("Jogador não encontrado")
+
+        id_jogador = jog['player_id']
+
+        # Busca todos os torneios do jogador naquele ano, agrupados por torneio
+        # Usamos MAX(winner_id=?) para detectar se venceu a final (campeão),
+        # e a rodada_eliminado para saber onde parou — evita o bug do MAX() alfabético
+        torneios_query = conn.execute('''
+            SELECT
+                tourney_name,
+                tourney_level,
+                surface,
+                MIN(tourney_date) as tourney_date,
+                MAX(CASE WHEN winner_id = ? AND round = 'F' THEN 1 ELSE 0 END) AS foi_campeao,
+                MAX(CASE WHEN loser_id  = ? THEN round ELSE NULL END) AS rodada_eliminado,
+                COUNT(CASE WHEN winner_id = ? THEN 1 END) AS vitorias,
+                COUNT(CASE WHEN loser_id  = ? THEN 1 END) AS derrotas
+            FROM partidas
+            WHERE SUBSTR(CAST(tourney_date AS TEXT), 1, 4) = ?
+              AND (winner_id = ? OR loser_id = ?)
+              AND tourney_name NOT LIKE '%Laver Cup%'
+            GROUP BY tourney_name, tourney_level, surface
+            ORDER BY tourney_date ASC
+        ''', (id_jogador, id_jogador, id_jogador, id_jogador, ano, id_jogador, id_jogador)).fetchall()
+
+        if not torneios_query:
+            return erro(f"Nenhum torneio encontrado para {jog['nome_completo']} em {ano}.")
+
+        NIVEL_LABEL = {'G': 'Grand Slam', 'F': 'ATP Finals', 'M': 'Masters 1000', 'A': 'ATP 500/250', 'C': 'Challenger'}
+
+        torneios = []
+        total_vitorias = 0
+        total_derrotas = 0
+        titulos = 0
+
+        for t in torneios_query:
+            campeao = bool(t['foi_campeao'])
+
+            # Se foi campeão não há rodada_eliminado — resultado é Final
+            if campeao:
+                melhor = 'F'
+            elif t['rodada_eliminado']:
+                melhor = t['rodada_eliminado']
+            else:
+                melhor = '?'
+
+            superficie = TRADUCAO_SUPERFICIE.get(t['surface'], t['surface']) if t['surface'] else 'Desconhecido'
+
+            total_vitorias += t['vitorias']
+            total_derrotas += t['derrotas']
+            if campeao:
+                titulos += 1
+
+            torneios.append({
+                "torneio": t['tourney_name'],
+                "nivel": NIVEL_LABEL.get(t['tourney_level'], t['tourney_level']),
+                "superficie": superficie,
+                "resultado": TRADUCAO_RODADA.get(melhor, melhor),
+                "campeao": campeao,
+                "vitorias": t['vitorias'],
+                "derrotas": t['derrotas']
+            })
+
+        return jsonify({
+            "jogador": jog['nome_completo'],
+            "ano": ano,
+            "total_torneios": len(torneios),
+            "total_vitorias": total_vitorias,
+            "total_derrotas": total_derrotas,
+            "titulos": titulos,
+            "torneios": torneios
+        })
+    except Exception as e:
+        return erro(f"Erro interno: {str(e)}", 500)
+    finally:
+        conn.close()
+
+
+# 2. ABA DE TORNEIO — histórico completo
+@app.route('/api/torneio/<nome_torneio>', methods=['GET'])
+def buscar_historico_torneio(nome_torneio):
+    conn = conectar_banco()
+    try:
+        finais = conn.execute('''
+            SELECT
+                SUBSTR(CAST(tourney_date AS TEXT), 1, 4) AS ano,
+                tourney_name,
+                winner_name,
+                loser_name,
+                score
+            FROM partidas
+            WHERE tourney_name LIKE ? AND round = 'F'
+            ORDER BY tourney_date DESC
+        ''', (f'%{nome_torneio}%',)).fetchall()
+
+        if not finais:
+            return erro("Torneio não encontrado.")
+
+        return jsonify({
+            "torneio_oficial": finais[0]['tourney_name'],
+            "edicoes": [
+                {
+                    "ano": f['ano'],
+                    "campeao": f['winner_name'],
+                    "vice": f['loser_name'],
+                    "placar": f['score']
+                }
+                for f in finais
+            ]
+        })
+    except Exception as e:
+        return erro(f"Erro interno: {str(e)}", 500)
+    finally:
+        conn.close()
+
+
+# 2b. rota antiga mantida por compatibilidade (pode remover futuramente)
 @app.route('/api/torneio/<nome_torneio>/<ano>', methods=['GET'])
 def buscar_campeao(nome_torneio, ano):
     conn = conectar_banco()
