@@ -10,7 +10,8 @@ TRADUCAO_SUPERFICIE = {'Clay': 'Saibro', 'Grass': 'Grama', 'Hard': 'Dura', 'Carp
 TRADUCAO_RODADA = {
     'F': 'Final', 'SF': 'Semifinal', 'QF': 'Quartas',
     'R16': 'Oitavas', 'R32': '3ª Rodada', 'R64': '2ª Rodada',
-    'R128': '1ª Rodada', 'RR': 'Grupos'
+    'R128': '1ª Rodada', 'RR': 'Grupos',
+    'Q1': 'Qualif. R1', 'Q2': 'Qualif. R2', 'Q3': 'Qualif. R3'
 }
 
 

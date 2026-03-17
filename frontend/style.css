@@ -482,6 +482,28 @@ button:hover {
     font-weight: bold;
 }
 
+/* Separadores de seção na campanha */
+.secao-label {
+    font-size: 12px;
+    color: #95a5a6;
+    text-align: center;
+    margin: 14px 0 8px 0;
+    letter-spacing: 0.5px;
+}
+
+/* Badge de entrada especial (LL, WC, etc) */
+.badge-entrada {
+    display: inline-block;
+    background: #e8f4fd;
+    color: #2980b9;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid #aed6f1;
+    vertical-align: middle;
+}
+
 /* Item de partida na aba Campanha */
 .partida-campanha-item {
     padding: 10px;
@@ -734,7 +756,7 @@ button:hover {
 /* Linhas de partida dentro do detalhe */
 .detalhe-partida {
     display: grid;
-    grid-template-columns: 90px 110px 1fr auto;
+    grid-template-columns: 80px 100px 1fr auto;
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
@@ -747,11 +769,14 @@ button:hover {
 }
 
 .detalhe-rodada {
-    font-size: 12px;
+    font-size: 11px;
     color: #7f8c8d;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .detalhe-resultado {
@@ -764,6 +789,31 @@ button:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.detalhe-secao-label {
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #95a5a6;
+    padding: 8px 16px 4px;
+    background: #f0f4f8;
+    border-bottom: 1px solid #eef2f7;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge-entrada {
+    background: #3498db;
+    color: white;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    text-transform: none;
+    font-weight: bold;
 }
 
 .detalhe-placar {
@@ -817,6 +867,17 @@ button:hover {
     gap: 8px;
     flex-shrink: 0;
     text-align: right;
+}
+
+.badge-qualifying {
+    background: #eaf4fb;
+    color: #2471a3;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 20px;
+    border: 1px solid #aed6f1;
+    white-space: nowrap;
 }
 
 .badge-campeao {

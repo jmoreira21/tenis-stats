@@ -433,22 +433,41 @@ document.getElementById('btn-buscar-campanha').addEventListener('click', async (
             ? `<div class="banner-campeao" style="display:block;">🏆 CAMPEÃO DO TORNEIO! 🏆</div>`
             : '';
 
-        const partidasHtml = dados.partidas.map(p => {
-            const classeResultado = p.resultado === 'V' ? 'cor-vitoria' : 'cor-derrota';
-            const textoResultado  = p.resultado === 'V' ? 'Vitória sobre' : 'Derrota para';
-            return `
-                <div class="partida-campanha-item">
-                    <strong>${p.rodada}</strong>:
-                    <span class="${classeResultado} negrito">${textoResultado}</span> ${p.oponente}
-                    <br><em>Placar: ${p.placar}</em>
-                </div>`;
-        }).join('');
+        function linhasPartidas(lista) {
+            return lista.map(p => {
+                const cls = p.resultado === 'V' ? 'cor-vitoria' : 'cor-derrota';
+                const txt = p.resultado === 'V' ? 'Vitória sobre' : 'Derrota para';
+                return `
+                    <div class="partida-campanha-item">
+                        <strong>${p.rodada}</strong>:
+                        <span class="${cls} negrito">${txt}</span> ${p.oponente}
+                        <br><em>Placar: ${p.placar}</em>
+                    </div>`;
+            }).join('');
+        }
+
+        let html = '';
+
+        // Qualifying — só mostra se existir
+        if (dados.qualifying && dados.qualifying.length > 0) {
+            html += `<p class="secao-label">── Qualificatória ──</p>`;
+            html += linhasPartidas(dados.qualifying);
+        }
+
+        // Main draw — com badge de entrada especial se houver
+        if (dados.partidas && dados.partidas.length > 0) {
+            const badge = dados.entrada_especial
+                ? `<span class="badge-entrada">${dados.entrada_especial}</span>`
+                : '';
+            html += `<p class="secao-label">── Torneio Principal ${badge} ──</p>`;
+            html += linhasPartidas(dados.partidas);
+        }
 
         const area = document.getElementById('area-resultado-campanha');
         area.innerHTML = `
             <h2>${dados.jogador} em ${dados.torneio} (${dados.ano})</h2>
             ${bannerCampeao}
-            ${partidasHtml}
+            ${html}
         `;
         area.style.display = 'block';
     } catch (err) {
@@ -571,7 +590,12 @@ function renderizarTemporada(temp, container) {
 
     const torneiosHtml = temp.torneios.map((t, i) => {
         const classeCampeao = t.campeao ? 'torneio-item campeao' : 'torneio-item';
-        const badge = t.campeao ? '<span class="badge-campeao">🏆 Campeão</span>' : '';
+        const badge = t.campeao
+            ? '<span class="badge-campeao">🏆 Campeão</span>'
+            : t.so_qualifying
+                ? '<span class="badge-qualifying">Q</span>'
+                : '';
+        const placar = t.so_qualifying ? '' : `<span class="torneio-placar">${t.vitorias}V-${t.derrotas}D</span>`;
         return `
             <div class="${classeCampeao} torneio-clicavel" data-index="${i}" data-torneio="${encodeURIComponent(t.torneio)}">
                 <div class="torneio-info">
@@ -580,7 +604,7 @@ function renderizarTemporada(temp, container) {
                 </div>
                 <div class="torneio-resultado">
                     ${badge}
-                    <span class="torneio-placar">${t.vitorias}V-${t.derrotas}D</span>
+                    ${placar}
                     <span class="torneio-rodada">${t.resultado}</span>
                     <span class="torneio-seta">▼</span>
                 </div>
@@ -626,17 +650,39 @@ function renderizarTemporada(temp, container) {
                 const campanha = await apiFetch(
                     `${API_URL}/campanha/${encodeURIComponent(temp.jogador)}/${encodeURIComponent(nomeTorneio)}/${temp.ano}`
                 );
-                detalhe.innerHTML = campanha.partidas.map(p => {
-                    const cls  = p.resultado === 'V' ? 'cor-vitoria' : 'cor-derrota';
-                    const txt  = p.resultado === 'V' ? 'Vitória sobre' : 'Derrota para';
-                    return `
-                        <div class="detalhe-partida">
-                            <span class="detalhe-rodada">${p.rodada}</span>
-                            <span class="detalhe-resultado ${cls}">${txt}</span>
-                            <span class="detalhe-oponente">${p.oponente}</span>
-                            <span class="detalhe-placar">${p.placar}</span>
-                        </div>`;
-                }).join('');
+
+                function linhasPartidas(partidas) {
+                    return partidas.map(p => {
+                        const cls = p.resultado === 'V' ? 'cor-vitoria' : 'cor-derrota';
+                        const txt = p.resultado === 'V' ? 'Vitória sobre' : 'Derrota para';
+                        return `
+                            <div class="detalhe-partida">
+                                <span class="detalhe-rodada">${p.rodada}</span>
+                                <span class="detalhe-resultado ${cls}">${txt}</span>
+                                <span class="detalhe-oponente">${p.oponente}</span>
+                                <span class="detalhe-placar">${p.placar}</span>
+                            </div>`;
+                    }).join('');
+                }
+
+                let html = '';
+
+                // Seção qualifying
+                if (campanha.qualifying && campanha.qualifying.length > 0) {
+                    html += `<div class="detalhe-secao-label">Qualificatória</div>`;
+                    html += linhasPartidas(campanha.qualifying);
+                }
+
+                // Seção main draw
+                if (campanha.partidas && campanha.partidas.length > 0) {
+                    const badge = campanha.entrada_especial
+                        ? `<span class="badge-entrada">${campanha.entrada_especial}</span>`
+                        : '';
+                    html += `<div class="detalhe-secao-label">Torneio Principal ${badge}</div>`;
+                    html += linhasPartidas(campanha.partidas);
+                }
+
+                detalhe.innerHTML = html || '<p class="temporada-carregando">Sem partidas encontradas.</p>';
             } catch (err) {
                 detalhe.innerHTML = `<p class="msg-erro">⚠️ ${err.message}</p>`;
             }

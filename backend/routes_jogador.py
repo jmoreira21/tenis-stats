@@ -128,7 +128,9 @@ def buscar_temporada(jogador, ano):
         id_jogador = jog['player_id']
 
         # Usamos MAX(winner_id=?) para detectar se venceu a final (campeão),
-        # e a rodada_eliminado para saber onde parou — evita o bug do MAX() alfabético
+        # e a rodada_eliminado para saber onde parou — evita o bug do MAX() alfabético.
+        # Incluímos qualifying mas separamos: só_qualifying indica que o jogador
+        # não chegou ao main draw.
         torneios_query = conn.execute('''
             SELECT
                 tourney_name,
@@ -136,9 +138,11 @@ def buscar_temporada(jogador, ano):
                 surface,
                 MIN(tourney_date) as tourney_date,
                 MAX(CASE WHEN winner_id = ? AND round = 'F' THEN 1 ELSE 0 END) AS foi_campeao,
-                MAX(CASE WHEN loser_id  = ? THEN round ELSE NULL END) AS rodada_eliminado,
-                COUNT(CASE WHEN winner_id = ? THEN 1 END) AS vitorias,
-                COUNT(CASE WHEN loser_id  = ? THEN 1 END) AS derrotas
+                MAX(CASE WHEN loser_id  = ? AND round NOT IN ('Q1','Q2','Q3') THEN round ELSE NULL END) AS rodada_eliminado,
+                COUNT(CASE WHEN winner_id = ? AND round NOT IN ('Q1','Q2','Q3') THEN 1 END) AS vitorias,
+                COUNT(CASE WHEN loser_id  = ? AND round NOT IN ('Q1','Q2','Q3') THEN 1 END) AS derrotas,
+                MAX(CASE WHEN round NOT IN ('Q1','Q2','Q3') THEN 1 ELSE 0 END) AS teve_maindraw,
+                MAX(CASE WHEN round IN ('Q1','Q2','Q3') THEN 1 ELSE 0 END) AS teve_qualifying
             FROM partidas
             WHERE SUBSTR(CAST(tourney_date AS TEXT), 1, 4) = ?
               AND (winner_id = ? OR loser_id = ?)
@@ -161,9 +165,13 @@ def buscar_temporada(jogador, ano):
         titulos = 0
 
         for t in torneios_query:
-            campeao = bool(t['foi_campeao'])
+            campeao   = bool(t['foi_campeao'])
+            so_qualifying = bool(t['teve_qualifying']) and not bool(t['teve_maindraw'])
+
             if campeao:
                 melhor = 'F'
+            elif so_qualifying:
+                melhor = 'QUAL'   # só jogou qualifying
             elif t['rodada_eliminado']:
                 melhor = t['rodada_eliminado']
             else:
@@ -179,10 +187,11 @@ def buscar_temporada(jogador, ano):
                 "torneio": t['tourney_name'],
                 "nivel": NIVEL_LABEL.get(t['tourney_level'], t['tourney_level']),
                 "superficie": superficie,
-                "resultado": TRADUCAO_RODADA.get(melhor, melhor),
+                "resultado": "Qualifying" if so_qualifying else TRADUCAO_RODADA.get(melhor, melhor),
                 "campeao": campeao,
                 "vitorias": t['vitorias'],
-                "derrotas": t['derrotas']
+                "derrotas": t['derrotas'],
+                "so_qualifying": so_qualifying
             })
 
         return jsonify({
