@@ -1,12 +1,13 @@
 import sqlite3
 import os
 
-# Caminho do banco de dados
-# Suporta tanto a estrutura local (backend/../dados/) quanto o Railway (variável de ambiente)
 diretorio_atual = os.path.dirname(os.path.abspath(__file__))
-caminho_db = os.environ.get(
-    'DATABASE_PATH',
-    os.path.join(diretorio_atual, '..', 'dados', 'tennis.db')
+
+_caminho_local   = os.path.join(diretorio_atual, '..', 'dados', 'tennis.db')
+_caminho_railway = os.path.join(diretorio_atual, 'tennis.db')
+
+caminho_db = os.environ.get('DATABASE_PATH') or (
+    _caminho_railway if os.path.exists(_caminho_railway) else _caminho_local
 )
 
 # Dicionários de tradução compartilhados por todos os módulos
