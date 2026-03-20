@@ -2,6 +2,10 @@
 
 Site de estatísticas históricas do circuito ATP de tênis. Desenvolvido com Python (Flask) no backend e HTML/CSS/JavaScript puro no frontend.
 
+Acesse o site clicando aqui: https://jmoreira21.github.io/tenis-stats/
+
+Dados dos tenistas vão até 2024
+
 ---
 
 ## Funcionalidades
