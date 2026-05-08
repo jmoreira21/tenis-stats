@@ -1,4 +1,4 @@
-const API_URL = 'https://tenis-stats-production.up.railway.app/api';
+const API_URL = 'http://localhost:5000/api';
 
 // ==========================================
 // 1. FUNÇÕES UTILITÁRIAS

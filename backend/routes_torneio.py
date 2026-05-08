@@ -12,6 +12,7 @@ def erro(mensagem, codigo=404):
 def buscar_historico_torneio(nome_torneio):
     conn = conectar_banco()
     try:
+        # A MÁGICA AQUI: Sub-query para travar no nome exato do torneio
         finais = conn.execute('''
             SELECT
                 SUBSTR(CAST(tourney_date AS TEXT), 1, 4) AS ano,
@@ -20,7 +21,11 @@ def buscar_historico_torneio(nome_torneio):
                 loser_name,
                 score
             FROM partidas
-            WHERE tourney_name LIKE ? AND round = 'F'
+            WHERE tourney_name = (
+                SELECT tourney_name FROM partidas
+                WHERE tourney_name LIKE ? AND round = 'F'
+                ORDER BY tourney_date DESC LIMIT 1
+            ) AND round = 'F'
             ORDER BY tourney_date DESC
         ''', (f'%{nome_torneio}%',)).fetchall()
 
